@@ -1,0 +1,54 @@
+{
+  "start": {
+    "utc": "2026-10-19T21:00:00Z",
+    "state_km_km_s": [
+      6603.069743826985,
+      4996.517838917673,
+      2682.051115643233,
+      -1.961074925812481,
+      8.523928792134363,
+      5.004623521025996
+    ],
+    "earth_range_km": 8703.971435120235,
+    "speed_km_s": 10.077173884836673,
+    "spherical_altitude_km": 2325.834435120235,
+    "earth_only_c3_km2_s2": 9.958959322687974,
+    "osculating_eccentricity": 1.1687539637634516,
+    "osculating_inclination_deg": 30.138125995611226
+  },
+  "end": {
+    "utc": "2026-10-25T21:00:00Z",
+    "state_km_km_s": [
+      -1243152.276993319,
+      1081822.70933561,
+      662156.7571272515,
+      -2.300321085228305,
+      1.93018097845788,
+      1.183468066890486
+    ],
+    "earth_range_km": 1776012.2548105323,
+    "speed_km_s": 3.227641920984428,
+    "spherical_altitude_km": 1769634.1178105322,
+    "earth_only_c3_km2_s2": 9.968801103101866,
+    "osculating_eccentricity": 1.2910935417205294,
+    "osculating_inclination_deg": 30.282828143779994
+  },
+  "minimum_sampled_moon_distance": {
+    "utc": "2026-10-19T21:00:00Z",
+    "distance_km": 399534.54558906564,
+    "at_window_boundary": true
+  },
+  "final_moon_distance_km": 1911515.3091940428,
+  "validation": {
+    "midpoint_count": 8640,
+    "max_position_error_km": 0.0052810256178293345,
+    "max_position_error_utc": "2026-10-19T21:00:30Z",
+    "max_velocity_error_km_s": 0.0022334336985328795,
+    "max_velocity_error_utc": "2026-10-19T21:01:30Z",
+    "moon_crosscheck_count": 7,
+    "max_moon_de440s_vs_horizons_km": 0.0024691215741745845,
+    "earth_range_strictly_increasing": true,
+    "moon_distance_strictly_increasing": true,
+    "earth_quaternion_max_norm_error": 2.220446049250313e-16
+  }
+}
