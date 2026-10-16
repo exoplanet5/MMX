@@ -13,11 +13,15 @@ const result = await build({
     builder.onResolve({ filter: /^three\/addons\// }, args => ({ path: path.join(vendor, args.path.slice(6)) }));
   } }],
 });
-const [template, stellar, image, threeLicense, referenceLicense, celestialLicense] = await Promise.all([
+const [template, stellarReference, image, threeLicense, referenceLicense, celestialLicense, hipparcosRaw] = await Promise.all([
   readFile(path.join(root, 'web/index.template.html'), 'utf8'), readFile(path.join(root, 'web/assets/stars.json'), 'utf8'),
   readFile(path.join(root, 'web/assets/earth_day.jpg')), readFile(path.join(vendor, 'LICENSE'), 'utf8'),
   readFile(path.join(root, 'web/vendor/STARSHIP_LICENSE'), 'utf8'), readFile(path.join(root, 'web/vendor/CELESTIAL_LICENSE'), 'utf8'),
+  readFile(path.join(root, 'web/assets/hipparcos.json'), 'utf8'),
 ]);
+const reference = JSON.parse(stellarReference), hipparcos = JSON.parse(hipparcosRaw);
+const stellar = JSON.stringify({ stars: hipparcos.stars, names: reference.names, cons: reference.cons, lines: reference.lines,
+  meta: { stars: hipparcos.meta, overlays: reference.meta } });
 const license = `/* Three.js r170\n${threeLicense}\nStarship IFT-14 / SatObserver-MX reference patterns\n${referenceLicense}\nStellar catalog derived from d3-celestial\n${celestialLicense}\n*/\n`;
 const script = (license + result.outputFiles[0].text).replaceAll('</script', '<\\/script');
 const checkbox = (id, label, checked = true) => `<label class="check"><input id="${id}" type="checkbox"${checked ? ' checked' : ''}> ${label}</label>`;
@@ -36,13 +40,14 @@ for (const transfer of [false, true]) {
     DESCRIPTION: transfer ? 'MMX heliocentric Earth-to-Mars planning trajectory, October 2026 to August 2027, with planetary orbits and an inertial stellar background.' : 'MMX Earth-centered departure, 19–25 October 2026, with geometric RA/Dec, catalog stars and constellations.',
     EARTH_ACTIVE: transfer ? '' : 'active', TRANSFER_ACTIVE: transfer ? 'active' : '',
     CAMERA_BUTTONS: transfer ? '<button class="active" data-view="inner">Earth–Mars scale</button><button data-view="outer">Jupiter &amp; Saturn scale</button>'
-      : '<button class="active" data-view="full">Full six-day trajectory</button><button data-view="departure">Near-Earth detail</button>',
+      : '<button class="active" data-view="departure">Near-Earth detail</button><button data-view="full">Full six-day trajectory</button>',
     CAMERA_HINT: transfer ? 'Left-drag to orbit · scroll to zoom.<br>Right-drag to pan; subsequent orbiting uses the new pivot.'
       : 'Left- or right-drag to orbit Earth.<br>Scroll or pinch to zoom. The pivot stays at Earth’s center.',
     RESET_LABEL: transfer ? 'Reset to Sun' : 'Reset to Earth',
     BODY_LAYERS: transfer ? checkbox('show-planets', 'Planets') + checkbox('show-orbits', 'Planet orbits')
       : checkbox('show-moon', 'Moon') + checkbox('show-moon-orbit', 'Lunar orbit / path', false),
     ORBIT_LEGEND: transfer ? 'Planet reference orbits' : 'Lunar path · optional',
+    TERMINATOR_LEGEND: transfer ? '' : '<div><i class="legend-line terminator"></i>Day–night terminator</div>',
     EVENT_HEADING: transfer ? 'Transfer timeline' : 'Departure timeline',
     EVENT_NOTE: transfer ? 'Geometry milestones from the planning arc. The final state precedes a model splice; it is not an official insertion time.' : 'Planning states, 19–25 October 2026. Elapsed time is measured from this window’s start.',
     START_INPUT: meta.start_utc.slice(0, 19), END_INPUT: meta.end_utc.slice(0, 19),
@@ -63,8 +68,8 @@ for (const transfer of [false, true]) {
     TABLE_NOTE: transfer ? 'Heliocentric distance and speed; Earth-center range. Sampling is denser near departure and arrival.' : 'Geometric Earth-centered ICRF. Positions sampled every 60 seconds; RA/Dec derive from the Cartesian vectors.',
     TABLE_HEAD: (transfer ? ['UTC', 'Sun range AU', 'Speed km/s', 'Earth range km'] : ['UTC', 'Earth range km', 'Speed km/s', 'RA', 'Dec']).map(text => `<th>${text}</th>`).join(''),
     ABOUT_CONTENT: transfer
-      ? '<h2>Earth to Mars</h2><p>This page covers 19 October 2026 21:00 UTC through 29 August 2027 04:57 UTC. The larger Horizons planning ephemeris extends to December 2028. The target description gives Mars arrival as August 2027; the exact displayed boundary is inferred from the ephemeris.</p><p class="notice">Between 04:57 and 04:58 UTC on 29 August, the planning solution changes discontinuously into a Mars-orbit segment. This viewer stops before that splice and never interpolates a fictitious capture maneuver.</p><h2>Frame, planets and camera</h2><p>Sun-centered geometric ICRF equatorial states, in km and km/s; display distances use AU. Left-drag orbits the current camera pivot. Right-drag pans that pivot through space; Reset to Sun restores the Sun-centered Mars-orbit-scale view.</p><p>Earth, Mars, Jupiter and Saturn positions are simultaneous DE440s states. Earth uses its center; the others use their system barycenters. Optional solid orbit lines are reference tracks over one nominal orbital period from the start epoch, not just the transfer dates. Body radii are physical; visibility markers are enlarged.</p>'
-      : '<h2>Earth departure</h2><p>This page covers 19–25 October 2026, 21:00 UTC at both ends. The camera always orbits Earth’s center, including right-drag and two-finger gestures. Reset to Earth restores the full six-day view.</p><h2>Reference frame and readouts</h2><p>Geometric Earth-centered ICRF equatorial states, with no light-time or aberration corrections. Right ascension is atan2(Y,X), wrapped to 0–24 hours; declination is atan2(Z,√(X²+Y²)). All epochs are UTC.</p><p>The Moon and its solid six-day path have independent visibility controls. The Moon is initially visible; its path is initially hidden. Earth’s geographical texture rotates using precomputed Skyfield ITRS-to-ICRF quaternions, with polar motion omitted. Neither the trajectory nor the stellar reference rotates with Earth.</p>',
+      ? '<p>Explore MMX’s Sun-centered cruise from 19 October 2026 21:00 UTC to 29 August 2027 04:57 UTC, with Earth, Mars, Jupiter and Saturn for context. The final epoch precedes a discontinuity in the planning ephemeris; it is not an official insertion time.</p><p>Positions and speeds are geometric ICRF states. Planet paths span one nominal orbit; Mars, Jupiter and Saturn use their system barycenters. Left-drag orbits the current pivot, right-drag pans, and Reset to Sun restores the Earth–Mars view.</p>'
+      : '<p>Explore MMX’s Earth-centered departure from 19 October 2026 21:00 UTC to 25 October 2026 21:00 UTC. The near-Earth view frames the first three hours; the full view covers all six days. Both drag buttons orbit Earth.</p><p>Range, speed and RA/Dec describe the geometric Earth-to-MMX state in ICRF. The yellow surface line marks the geometric day–night terminator at the selected UTC, without atmospheric refraction. Earth’s geography rotates beneath the inertial trajectory.</p>',
     CSV_FILE: transfer ? 'mmx_transfer.csv' : 'mmx_eci.csv',
     EPHEMERIS_JSON: raw.replaceAll('<', '\\u003c'), STELLAR_JSON: stellar.replaceAll('<', '\\u003c'),
     EARTH_TEXTURE: 'data:image/jpeg;base64,' + image.toString('base64'), APP_SCRIPT: script,

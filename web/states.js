@@ -40,6 +40,15 @@ export function sample(data, seconds) {
   return result;
 }
 
+export function solarTerminator(sun, radius) {
+  const distance = Math.hypot(...sun.slice(0, 3));
+  if (!(radius > 0 && Number.isFinite(distance) && distance > radius)) throw new RangeError('Sun must lie outside the globe');
+  const normal = sun.slice(0, 3).map(value => value / distance);
+  // At the geometric horizon, r · (s − r) = 0, hence r · s = R².
+  const offset = radius * radius / distance;
+  return { normal, center: normal.map(value => value * offset), radius: Math.sqrt(radius * radius - offset * offset) };
+}
+
 export function sceneVector(vector, radius) {
   return [vector[0] / radius, vector[2] / radius, -vector[1] / radius];
 }

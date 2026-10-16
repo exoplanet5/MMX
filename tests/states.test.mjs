@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { sample, sceneVector, csvText, utcAt, equatorial } from '../web/states.js';
+import { sample, sceneVector, csvText, utcAt, equatorial, solarTerminator } from '../web/states.js';
+import { SKY_STYLE, starAppearance } from '../web/sky-style.js';
 const data = JSON.parse(readFileSync(new URL('../docs/data/ephemeris.json', import.meta.url)));
 const fixtures = JSON.parse(readFileSync(new URL('./fixtures.json', import.meta.url)));
 const norm = v => Math.hypot(...v);
@@ -72,6 +73,43 @@ test('geocentric RA/Dec have correct quadrants and polar limits', () => {
     const expected = equatorial(s.mmx);
     assert.equal(s.ra_deg, expected.ra_deg); assert.equal(s.dec_deg, expected.dec_deg);
   }
+});
+
+test('Roman star styling converts marker area to diameter and preserves magnitude order', () => {
+  let previous = starAppearance(-1.5);
+  for (const magnitude of [0, 1, 1.59, 1.6, 3, 4.6, 5.5, 6.59]) {
+    const style = starAppearance(magnitude);
+    assert.ok(style.diameter < previous.diameter);
+    assert.ok(style.opacity <= previous.opacity);
+    assert.equal(style.opacity, Math.max(.25, Math.min(1, .25 + .115 * (6.6 - magnitude))));
+    assert.ok(style.diameter >= .65 && style.opacity >= .25 && style.opacity <= 1);
+    if (magnitude < 1.6) assert.ok(style.ringDiameter > style.diameter);
+    else assert.equal(style.ringDiameter, 0);
+    if (magnitude < 6) assert.ok(Math.abs((style.diameter * 72 / 96) ** 2 - .55 * (6.9 - magnitude) ** 2.3) < 1e-12);
+    previous = style;
+  }
+  assert.equal(SKY_STYLE.raStepDegrees, 15);
+  assert.equal(SKY_STYLE.decStepDegrees, 15);
+});
+
+test('solar terminator lies on the globe at the finite-distance geometric horizon', () => {
+  const dot = (a, b) => a.reduce((sum, x, i) => sum + x * b[i], 0);
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const normalize = a => a.map(x => x / norm(a));
+  for (const [sun, radius] of [[[0, 0, 10], 1], [[0, 0, -10], 1], [[10, 0, 0], 1],
+    ...[0, 43210, 518400].map(t => [sample(data, t).sun, data.meta.earth_radius_km])]) {
+    const b = solarTerminator(sun, radius);
+    const a = normalize(cross(b.normal, Math.abs(b.normal[0]) < .9 ? [1, 0, 0] : [0, 1, 0]));
+    const c = cross(b.normal, a);
+    for (let i = 0; i < 36; i++) {
+      const angle = i * Math.PI / 18;
+      const p = b.center.map((x, k) => x + b.radius * (a[k] * Math.cos(angle) + c[k] * Math.sin(angle)));
+      assert.ok(Math.abs(norm(p) / radius - 1) < 1e-14);
+      assert.ok(Math.abs(dot(p, sun.slice(0, 3).map((x, k) => x - p[k]))) / (radius * norm(sun.slice(0, 3))) < 1e-14);
+    }
+  }
+  assert.throws(() => solarTerminator([0, 0, 0], 1), RangeError);
+  assert.throws(() => solarTerminator([1, 0, 0], 1), RangeError);
 });
 
 const transfer = JSON.parse(readFileSync(new URL('../docs/data/transfer.json', import.meta.url)));

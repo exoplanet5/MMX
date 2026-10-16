@@ -64,6 +64,23 @@ class TransferTests(unittest.TestCase):
             self.assertLess(np.linalg.norm(p[-1] - p[0]) / np.linalg.norm(p[0]), .03)
         self.assertGreater(D["orbits"]["saturn"]["nominal_period_days"], 10000)
 
+    def test_hipparcos_field(self):
+        sky = json.loads((ROOT / "web/assets/hipparcos.json").read_text())
+        stars = np.array(sky["stars"])
+        self.assertEqual(stars.shape, (9827, 3))
+        self.assertEqual(len(set(sky["hip_ids"])), 9827)
+        self.assertTrue(np.isfinite(stars).all())
+        self.assertTrue(np.all((0 <= stars[:, 0]) & (stars[:, 0] < 360)))
+        self.assertTrue(np.all(np.abs(stars[:, 1]) <= 90))
+        self.assertTrue(np.all(stars[:, 2] < 6.6))
+        self.assertGreater(np.sum(stars[:, 2] > 4.6), 8000)
+        sirius = stars[sky["hip_ids"].index(32349)]
+        self.assertAlmostEqual(sirius[0], 101.287, places=2)
+        self.assertAlmostEqual(sirius[1], -16.716, places=2)
+        self.assertEqual(sirius[2], -1.44)
+        self.assertIn("J1991.25", sky["meta"]["coordinates"])
+        self.assertEqual(len(sky["meta"]["source_sha256"]), 64)
+
     def test_stellar_catalog(self):
         sky = json.loads((ROOT / "web/assets/stars.json").read_text())
         self.assertEqual(len(sky["stars"]), 1018)

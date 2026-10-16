@@ -56,6 +56,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
+## Hipparcos field and Roman chart styling
+
+`web/assets/hipparcos.json` contains **9,827 stars with V < 6.6** from the user's Roman chart input `data/hip_bright.csv`. Source: **ESA 1997, The Hipparcos and Tycho Catalogues, ESA SP-1200**, distributed by [CDS/VizieR, I/239/hip_main](https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239). HIP identifiers, ICRS RA/Dec at catalog epoch J1991.25, and visual magnitudes are preserved. No proper-motion propagation is applied. Input SHA-256 and attribution are embedded in the JSON and both pages.
+
+`scripts/import_hipparcos.py` validates and imports this CSV. Star-marker area and opacity follow the user's Roman sky-track figure, with white points, blue-gray constellation lines and rings for V < 1.6. Marker areas are converted to CSS-pixel diameters rather than used as WebGL point diameters. The Hipparcos field supplies the stars; the separately attributed SatObserver catalog below supplies the names and constellation overlays.
+
 ## SatObserver-MX stellar reference and d3-celestial
 
 `web/assets/stars.json` is a data-only extraction of the user's SatObserver-MX `app/js/vendor/starcat.js`, derived from [d3-celestial](https://github.com/ofrohn/d3-celestial) and BSC5/HYG. It contains 1,018 stars to magnitude 4.6, 110 names and 150 constellation polylines. Coordinates are rounded J2000 display directions; no proper-motion correction is applied. The original catalog file's SHA-256 and source attribution are retained in the JSON metadata.

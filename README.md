@@ -11,11 +11,11 @@ Two linked, standalone scientific viewers for JAXA's Martian Moons eXploration s
 **2026-10-19 21:00:00 → 2026-10-25 21:00:00 UTC**
 
 - The camera is centered on Earth. **Both left-drag and right-drag orbit Earth**, with panning disabled. Saved view links cannot move the pivot away from Earth.
-- Full six-day and near-Earth-detail views, plus **Reset to Earth**.
+- **Near-Earth detail is the default**, framing the first three hours. A full six-day view is also available; **Reset to Earth** restores near-Earth framing without changing the selected UTC.
+- A thin **yellow day–night terminator** follows the selected epoch’s Sun direction on the globe. It uses the geometric solar-center horizon on the spherical Earth, without atmospheric refraction; a tiny rendering offset avoids surface flicker.
 - Right panel: **Earth range, geocentric speed, geometric geocentric right ascension and declination** only.
 - **Moon on by default.** Its solid six-day path has an independent checkbox and is **off by default**.
 - **RA/Dec grid, stellar background and constellation lines are on by default**, with independent controls.
-- The former Cartesian plane presets, inertial-axis layer and scientific-figure links have been removed from the page.
 
 Earth-center distance grows from **8,703.971 km** to **1,776,012.255 km**; geocentric speed decreases from **10.077174 km/s** to **3.227642 km/s**.
 
@@ -46,9 +46,11 @@ Times below are geometry estimates from the planning ephemeris, not operational 
 
 ## Stellar reference and coordinate conventions
 
-The background reuses SatObserver-MX's derived **d3-celestial / BSC5 / HYG** catalog: **1,018 stars**, **110 bright-star names**, and **150 constellation polylines**. Grid spacing is **2 hours in RA and 30° in declination**. Stars are rendered at infinity in a separate camera-rotation-only scene, so solar-view panning introduces no false stellar parallax.
+The field follows the Roman sky-track chart: **9,827 Hipparcos stars with V < 6.6**, neutral-white magnitude-scaled points, and thin rings around stars brighter than V = 1.6. Marker area follows `0.55 × (6.9 − V)^2.3` in points²; its square root is converted to CSS-pixel diameter, with a subpixel visibility floor. Opacity follows `clamp(0.25 + 0.115 × (6.6 − V), 0.25, 1)`. Pixel density affects raster resolution, not apparent CSS size.
 
-The catalog is a rounded J2000 display catalog, without proper-motion correction. It is an orientation reference, not a precision observing chart. An external orbit-view camera does not reproduce the sky seen by an observer at Earth's center; the displayed geocentric RA/Dec values are independently calculated from the Earth-to-MMX vector.
+**110 bright-star names**, **150 constellation polylines**, and constellation-name labels come from SatObserver-MX's derived **d3-celestial / BSC5 / HYG** catalog. Grid spacing is **1 hour in RA and 15° in declination**. Stars are rendered at infinity in a separate camera-rotation-only scene, so solar-view panning introduces no false stellar parallax.
+
+Hipparcos coordinates are ICRS directions at catalog epoch **J1991.25**; the SatObserver overlays use rounded J2000 directions. Neither is propagated with proper motion. This is an orientation reference, not a precision observing chart. An external orbit-view camera does not reproduce the sky seen by an observer at Earth's center; the displayed geocentric RA/Dec values are independently calculated from the Earth-to-MMX vector.
 
 - **Axes:** ICRF equatorial inertial, closely aligned with J2000; not ecliptic or Earth-fixed.
 - **Earth page origin:** Earth center, Horizons `CENTER='500@399'`.
@@ -76,7 +78,7 @@ Downloads:
 
 ## Open locally or rebuild
 
-`docs/index.html` and `docs/transfer.html` are standalone pages, approximately **5.1 MiB** and **6.6 MiB**. Each embeds its code, data and assets. Double-click either file; keep them beside each other for cross-page navigation. No runtime server, CDN, ephemeris request or login is required.
+`docs/index.html` and `docs/transfer.html` are standalone pages, approximately **5.4 MiB** and **6.9 MiB**. Each embeds its code, data and assets. Double-click either file; keep them beside each other for cross-page navigation. No runtime server, CDN, ephemeris request or login is required.
 
 Use the shared **`~/JPLDE/de440s.bsp`** kernel; never copy a planetary kernel into this repository. The default Python is `~/.venvs/astro313/bin/python`. Pinned dependencies are in `requirements.txt` and the npm lockfile.
 
@@ -106,9 +108,10 @@ Browser tests use an existing Chrome installation. The macOS default is `/Applic
 
 - `src/ephemeris.py`, `src/transfer.py`: raw capture, validation, canonical state exports and scientific fixtures.
 - `data/raw/`, `data/transfer_raw/`: immutable Horizons responses, exact queries, retrieval times and hashes.
-- `web/app.js`, `web/states.js`, `web/sky.js`: shared viewer, interpolation/coordinate math and stellar scene.
+- `web/app.js`, `web/states.js`, `web/sky.js`, `web/sky-style.js`: shared viewer, interpolation/coordinate math, geometric terminator, stellar scene and magnitude styling.
 - `web/index.template.html`, `scripts/build_site.mjs`: build both linked, self-contained pages.
-- `web/assets/stars.json`: attributed, rounded stellar reference derived from SatObserver.
+- `web/assets/hipparcos.json`: the Roman chart's Hipparcos field, with HIP identifiers, catalog epoch and source hash. To reimport the reference CSV, run `~/.venvs/astro313/bin/python -I scripts/import_hipparcos.py /path/to/hip_bright.csv`.
+- `web/assets/stars.json`: attributed, rounded names and constellation overlays derived from SatObserver.
 - `docs/`: published pages, data and archived figures.
 
 GitHub Pages serves **`main` → `/docs`** at [exoplanet5.github.io/MMX](https://exoplanet5.github.io/MMX/). The existing Apache-2.0 [LICENSE](LICENSE) is retained; third-party MIT/BSD notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the embedded bundles.

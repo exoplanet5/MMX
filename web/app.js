@@ -3,26 +3,28 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import { sample, sceneVector, utcAt, csvText } from './states.js';
+import { sample, sceneVector, utcAt, csvText, solarTerminator } from './states.js';
 import { StellarBackground } from './sky.js';
+import { SKY_STYLE } from './sky-style.js';
 
 const $ = id => document.getElementById(id);
 const D = JSON.parse($('ephemeris-data').textContent), M = D.meta;
 const catalog = JSON.parse($('stellar-data').textContent);
 const transfer = M.center_id === 10, unit = transfer ? M.au_km : M.earth_radius_km;
 const duration = M.duration_s;
-const C = { blue: '#3987e5', pale: '#a1d4fc', moon: '#c1c7ce', orange: '#d95926', ink: '#e8eaed', surface: '#05070a' };
+const C = { blue: '#3987e5', pale: '#a1d4fc', moon: '#c1c7ce', orange: '#d95926', ink: '#e8eaed', surface: SKY_STYLE.background, terminator: '#b09025' };
 const fmt = (value, digits = 0) => value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
 const vector = value => new THREE.Vector3(...sceneVector(value, unit));
 const query = new URLSearchParams(location.search);
-const allowedViews = transfer ? ['inner', 'outer'] : ['full', 'departure'];
+const allowedViews = transfer ? ['inner', 'outer'] : ['departure', 'full'];
 const initialTime = Number(query.get('t') || 0);
 const state = { t: Number.isFinite(initialTime) ? Math.max(0, Math.min(duration, initialTime)) : 0,
   playing: false, speed: transfer ? 86400 : 3600,
   view: allowedViews.includes(query.get('view')) ? query.get('view') : allowedViews[0],
   moon: true, moonOrbit: false, planets: true, orbits: true, grid: true, stars: true, constellations: true, labels: true };
 let current = sample(D, state.t), renderer, scene, camera, controls, sky, earth, mmxMarker, earthMarker, sunLight;
-let moonPath, epochGroup, departureGroup, labelLayer, renderReady = false, lastTime = null, lastUI = 0;
+let moonPath, earthTerminator, epochGroup, departureGroup, labelLayer, renderReady = false, lastTime = null, lastUI = 0;
+const terminatorAxis = new THREE.Vector3(0, 0, 1), terminatorLift = 1.0002;
 let lastWidth = 0, lastHeight = 0, cameraEdited = false;
 const planetNodes = {}, orbitNodes = {}, lineMaterials = [], labels = [];
 const events = transfer ? D.summary.timeline : Array.from({ length: 7 }, (_, day) => ({
@@ -180,6 +182,10 @@ function setupScene() {
     if (image.complete) texture.needsUpdate = true; else image.addEventListener('load', () => { texture.needsUpdate = true; }, { once: true });
     earth = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 64), new THREE.MeshPhongMaterial({ map: texture, shininess: 5, specular: 0x151b22 }));
     scene.add(earth); earthMarker = pointMarker(C.blue, 10, false); scene.add(earthMarker);
+    const circle = Array.from({ length: 721 }, (_, i) => new THREE.Vector3(Math.cos(i * Math.PI / 360), Math.sin(i * Math.PI / 360), 0));
+    earthTerminator = makeLine(circle, C.terminator, 1.5);
+    earthTerminator.material.depthWrite = false;
+    scene.add(earthTerminator);
     addLabel('Earth', () => earth.position, 'earth', [-35, -22]);
     addPlanet('moon', M.moon_radius_km, C.moon);
     moonPath = makeLine(D.states.moon.filter((_, i) => i % 10 === 0).map(vector), C.moon, 1.3, .65); scene.add(moonPath);
@@ -235,6 +241,11 @@ function updateScene() {
     planetNodes.moon.mesh.position.copy(vector(current.moon)); planetNodes.moon.marker.position.copy(planetNodes.moon.mesh.position);
     planetNodes.moon.mesh.visible = planetNodes.moon.marker.visible = state.moon;
     moonPath.visible = state.moonOrbit; sunLight.position.copy(vector(current.sun));
+    const boundary = solarTerminator(current.sun, M.earth_radius_km);
+    earthTerminator.quaternion.setFromUnitVectors(terminatorAxis, new THREE.Vector3(...sceneVector(boundary.normal, 1)));
+    // A small radial lift prevents z-fighting; the boundary itself is computed on the surface.
+    earthTerminator.position.copy(vector(boundary.center)).multiplyScalar(terminatorLift);
+    earthTerminator.scale.setScalar(boundary.radius / unit * terminatorLift);
     $('scene-hint').textContent = state.view === 'departure' && state.t > 10800 ? 'Selected epoch is beyond the three-hour detail.' : 'Earth is always the camera pivot.';
   }
   departureGroup.visible = state.labels && !transfer && state.view === 'departure';
@@ -366,15 +377,12 @@ for (const event of events) {
   if (event.detail) button.title = event.detail;
   button.addEventListener('click', () => setTime(event.seconds, true)); $('events').appendChild(button);
 }
-const validation = D.summary.validation;
-$('about-validation').textContent = `${M.samples.toLocaleString()} stored states, checked against ${validation.midpoint_count.toLocaleString()} independent Horizons midpoint states. Maximum checked position residual: ${fmt(validation.max_position_error_km * 1000, 2)} m; velocity residual: ${fmt(validation.max_velocity_error_km_s * 1000, 2)} m/s. Cubic Hermite interpolation uses the supplied velocities and never extrapolates. These residuals are not flight-prediction uncertainty.`;
-$('about-provenance').textContent = `Retrieved ${M.retrieved_utc}. Source snapshot: ${M.snapshot}. Full queries, raw responses and hashes are in the repository.`;
 updateUI();
 try { setupScene(); }
 catch (error) { $('loading').hidden = true; $('render-error').hidden = false; $('render-error-detail').textContent = error.message; console.error('MMX renderer:', error); }
 window.__mmx = { state, mode: transfer ? 'transfer' : 'departure', setTime, setPlaying, fitCamera, sample: t => sample(D, t),
   get ready() { return renderReady; }, get camera() { return camera; }, get controls() { return controls; }, get earth() { return earth; },
-  get sky() { return sky; }, get planets() { return planetNodes; }, get moonOrbit() { return moonPath; }, get orbits() { return orbitNodes; }, meta: M,
+  get sky() { return sky; }, get terminator() { return earthTerminator; }, get planets() { return planetNodes; }, get moonOrbit() { return moonPath; }, get orbits() { return orbitNodes; }, meta: M,
   projectedBounds: () => {
     if (!renderReady) return null;
     const positions = transfer && state.view === 'inner' ? [...D.states.mmx.filter((_, i) => i % 30 === 0), ...D.orbits.mars.position_km]

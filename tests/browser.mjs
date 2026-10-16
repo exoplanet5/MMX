@@ -32,7 +32,40 @@ let server;
 try {
   await page.goto(pathToFileURL(path.join(root, 'docs/index.html')).href); await ready();
   assert.equal(await page.evaluate(() => window.__mmx.mode), 'departure');
+  assert.equal(await page.evaluate(() => window.__mmx.state.view), 'departure');
+  assert.equal(await page.locator('[data-view="departure"]').getAttribute('aria-pressed'), 'true');
   assert.equal(norm(await target()), 0);
+  assert.equal(await page.evaluate(() => window.__mmx.sky.stars.geometry.attributes.position.count), 9827);
+  assert.equal(await page.evaluate(() => window.__mmx.sky.grid.geometry.attributes.position.count), 8280);
+  const gridLabels = await page.locator('.grid-label').allTextContents();
+  assert.equal(gridLabels.length, 24 * 11);
+  for (const hour of [1, 7, 13, 23]) assert.ok(gridLabels.includes(`${hour}h +15°`));
+  assert.ok(await page.locator('.constellation-name').count() > 80);
+  const checkTerminator = () => page.evaluate(() => {
+    const app = window.__mmx, line = app.terminator;
+    const sun = app.sample(app.state.t).sun, unit = app.meta.earth_radius_km;
+    const s = line.position.clone().set(sun[0] / unit, sun[2] / unit, -sun[1] / unit);
+    line.updateMatrixWorld(true);
+    let radiusError = 0, horizonError = 0;
+    for (let i = 0; i < line.geometry.attributes.instanceStart.count; i += 19) {
+      const p = line.position.clone().fromBufferAttribute(line.geometry.attributes.instanceStart, i).applyMatrix4(line.matrixWorld).divideScalar(1.0002);
+      radiusError = Math.max(radiusError, Math.abs(p.length() - 1));
+      horizonError = Math.max(horizonError, Math.abs(p.dot(s.clone().sub(p))) / s.length());
+    }
+    return { radiusError, horizonError, depthTest: line.material.depthTest, independent: line.parent !== app.earth,
+      color: line.material.color.getHexString(), orientation: line.quaternion.toArray() };
+  });
+  const initialTerminator = await checkTerminator();
+  assert.ok(initialTerminator.radiusError < 1e-7);
+  assert.ok(initialTerminator.horizonError < 1e-7);
+  assert.ok(initialTerminator.depthTest && initialTerminator.independent);
+  assert.equal(initialTerminator.color, 'b09025');
+  await page.click('#show-about');
+  const about = await page.locator('#about-dialog').innerText();
+  assert.match(about, /1 hour and 15°/);
+  assert.ok(!/initially|hidden|removed|changelog|Sampling and provenance/i.test(about));
+  await shot('earth-about'); await page.click('#close-about');
+  await shot('earth-default');
   assert.deepEqual(await page.locator('#state-panel h2').allTextContents(), ['Earth range', 'Geocentric speed', 'Geocentric right ascension', 'Geocentric declination']);
   assert.equal(await page.locator('[data-view="xy"], [data-view="xz"], [data-view="yz"], #show-axes, #charts').count(), 0);
   assert.ok(!(await page.locator('body').innerText()).includes('Scientific figures'));
@@ -57,7 +90,15 @@ try {
   assert.equal(await page.evaluate(() => window.__mmx.sky.stars.visible), false);
   assert.equal(await page.evaluate(() => window.__mmx.sky.constellations.visible), true);
   await page.check('#show-stars');
-  await page.click('#reset-camera'); await page.click('#end');
+  await page.uncheck('#show-constellations'); await settle();
+  assert.equal(await page.locator('.constellation-name:not([hidden])').count(), 0);
+  await page.check('#show-constellations');
+  await page.click('#reset-camera');
+  assert.equal(await page.evaluate(() => window.__mmx.state.view), 'departure');
+  await page.click('#end');
+  const finalTerminator = await checkTerminator();
+  assert.ok(finalTerminator.radiusError < 1e-7 && finalTerminator.horizonError < 1e-7);
+  assert.ok(distance(initialTerminator.orientation, finalTerminator.orientation) > 1e-3);
   assert.match(await page.locator('#utc-clock').textContent(), /2026-10-25 21:00:00/);
   const direction = await page.evaluate(() => {
     const s = window.__mmx.sample(window.__mmx.state.t);
@@ -65,7 +106,8 @@ try {
   });
   assert.ok(Math.abs(direction.ra - (Math.atan2(direction.r[1], direction.r[0]) * 180 / Math.PI + 360) % 360) < 1e-10);
   assert.ok(Math.abs(direction.dec - Math.atan2(direction.r[2], Math.hypot(...direction.r.slice(0, 2))) * 180 / Math.PI) < 1e-10);
-  await page.locator('#timeline').fill('172800'); await settle();
+  await page.locator('#timeline').fill('172800');
+  await page.click('[data-view="full"]'); await settle();
   const bounds = await page.evaluate(() => window.__mmx.projectedBounds());
   assert.ok([...bounds.x, ...bounds.y].every(v => Math.abs(v) < .95));
   await shot('earth-desktop');
@@ -77,6 +119,11 @@ try {
   await (await downloadEvent).saveAs(path.join(out, 'earth-download.csv'));
   assert.equal((await readFile(path.join(out, 'earth-download.csv'), 'utf8')).trim().split(/\r?\n/).length, 8642);
   await page.click('#close-data'); await page.click('#reset-camera');
+  const nearDistance = norm(await page.evaluate(() => window.__mmx.camera.position.toArray()));
+  await page.click('[data-view="full"]');
+  assert.ok(norm(await page.evaluate(() => window.__mmx.camera.position.toArray())) > nearDistance * 10);
+  await page.click('#reset-camera');
+  assert.equal(await page.evaluate(() => window.__mmx.state.view), 'departure');
   await page.setViewportSize({ width: 390, height: 844 }); await settle();
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await shot('earth-mobile');
@@ -87,6 +134,9 @@ try {
   assert.deepEqual(await page.locator('#state-panel h2').allTextContents(), ['Heliocentric distance', 'Heliocentric speed', 'Earth range']);
   assert.equal(await page.evaluate(() => window.__mmx.meta.end_utc), '2027-08-29T04:57:00Z');
   assert.equal(await page.evaluate(() => window.__mmx.state.view), 'inner');
+  assert.equal(await page.evaluate(() => window.__mmx.sky.stars.geometry.attributes.position.count), 9827);
+  assert.equal(await page.evaluate(() => window.__mmx.sky.grid.geometry.attributes.position.count), 8280);
+  assert.equal(await page.evaluate(() => window.__mmx.terminator === undefined), true);
   const mobileBounds = await page.evaluate(() => window.__mmx.projectedBounds());
   assert.ok([...mobileBounds.x, ...mobileBounds.y].every(v => Math.abs(v) < .95));
   await shot('transfer-mobile');
@@ -146,8 +196,16 @@ try {
   await httpPage.goto(base + '?cam=400,280,600,-30,60,-45,0,1,0'); await httpPage.waitForFunction(() => window.__mmx?.ready);
   assert.deepEqual(await httpPage.evaluate(() => window.__mmx.controls.target.toArray()), [0, 0, 0], 'Restored Earth links must not bypass Earth lock');
   for (const suffix of ['', 'transfer.html', 'data/ephemeris.json', 'data/transfer.json', 'data/mmx_transfer.csv', 'data/transfer_provenance.json']) assert.equal((await httpContext.request.get(base + suffix)).status(), 200, suffix);
+  const retinaContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
+  const retinaPage = await retinaContext.newPage(); retinaPage.on('pageerror', e => errors.push(e.message));
+  await retinaPage.goto(base); await retinaPage.waitForFunction(() => window.__mmx?.ready);
+  await retinaPage.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await retinaPage.evaluate(() => window.__mmx.sky.starMaterial.uniforms.pixelRatio.value), 2);
+  assert.deepEqual(await retinaPage.evaluate(() => Array.from(window.__mmx.sky.stars.geometry.attributes.appearance.array)),
+    await page.evaluate(() => Array.from(window.__mmx.sky.stars.geometry.attributes.appearance.array)), 'Star diameters must remain in CSS pixels on Retina displays');
+  await retinaContext.close();
   assert.deepEqual(errors, []);
-  console.log('PASS: HTTP /MMX/ deployment paths, saved solar pivot, enforced Earth lock on old saved views, and both pages’ public data links.');
+  console.log('PASS: HTTP /MMX/ paths, saved solar pivot, enforced Earth lock, near-Earth reset, 1h/15° grid, moving solar terminator, and Retina star sizing.');
 } finally {
   if (server) await new Promise(resolve => server.close(resolve));
   await browser.close();
