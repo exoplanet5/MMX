@@ -10,18 +10,34 @@ export function hermite(a, b, u, dt) {
   return state;
 }
 
+export function equatorial(position) {
+  const [x, y, z] = position;
+  return { ra_deg: (Math.atan2(y, x) * 180 / Math.PI + 360) % 360,
+    dec_deg: Math.atan2(z, Math.hypot(x, y)) * 180 / Math.PI };
+}
+
 export function sample(data, seconds) {
   const t = Math.max(0, Math.min(data.meta.duration_s, Number.isFinite(seconds) ? seconds : 0));
-  const i = Math.min(data.elapsed_s.length - 2, Math.floor(t / data.meta.step_s));
-  const dt = data.elapsed_s[i + 1] - data.elapsed_s[i];
-  const u = (t - data.elapsed_s[i]) / dt;
+  const epochs = data.elapsed_s;
+  let i;
+  if (data.meta.step_s) i = Math.min(epochs.length - 2, Math.floor(t / data.meta.step_s));
+  else {
+    let low = 0, high = epochs.length - 1;
+    while (high - low > 1) { const middle = (low + high) >> 1; if (epochs[middle] <= t) low = middle; else high = middle; }
+    i = Math.min(low, epochs.length - 2);
+  }
+  const dt = epochs[i + 1] - epochs[i], u = (t - epochs[i]) / dt;
   const states = {};
-  for (const name of ['mmx', 'moon', 'sun']) states[name] = hermite(data.states[name][i], data.states[name][i + 1], u, dt);
-  return { t, i, u, ...states,
-    earthRange: Math.hypot(...states.mmx.slice(0, 3)),
-    speed: Math.hypot(...states.mmx.slice(3)),
-    moonDistance: Math.hypot(...states.mmx.slice(0, 3).map((x, k) => x - states.moon[k])),
-  };
+  for (const [name, values] of Object.entries(data.states)) states[name] = hermite(values[i], values[i + 1], u, dt);
+  const transfer = data.meta.center_id === 10;
+  const geo = states.mmx.slice(0, 3).map((value, k) => value - (transfer ? states.earth[k] : 0));
+  const result = { t, i, u, ...states, earthRange: Math.hypot(...geo),
+    speed: Math.hypot(...states.mmx.slice(3)), ...equatorial(geo) };
+  if (transfer) {
+    result.heliocentricRange = Math.hypot(...states.mmx.slice(0, 3));
+    result.marsRange = Math.hypot(...states.mmx.slice(0, 3).map((x, k) => x - states.mars[k]));
+  } else result.moonDistance = Math.hypot(...states.mmx.slice(0, 3).map((x, k) => x - states.moon[k]));
+  return result;
 }
 
 export function sceneVector(vector, radius) {
@@ -33,10 +49,15 @@ export function utcAt(data, t) {
 }
 
 export function csvText(data) {
-  const rows = ['utc,elapsed_s,x_km,y_km,z_km,vx_km_s,vy_km_s,vz_km_s,earth_range_km,speed_km_s,moon_distance_km'];
+  const transfer = data.meta.center_id === 10;
+  const rows = [transfer
+    ? 'utc,elapsed_s,x_km,y_km,z_km,vx_km_s,vy_km_s,vz_km_s,heliocentric_range_km,speed_km_s,earth_range_km,mars_range_km'
+    : 'utc,elapsed_s,x_km,y_km,z_km,vx_km_s,vy_km_s,vz_km_s,earth_range_km,speed_km_s,moon_distance_km'];
   for (let i = 0; i < data.elapsed_s.length; i++) {
-    rows.push([utcAt(data, data.elapsed_s[i]), data.elapsed_s[i], ...data.states.mmx[i],
-      data.metrics.earth_range_km[i], data.metrics.speed_km_s[i], data.metrics.moon_distance_km[i]].join(','));
+    const values = transfer
+      ? [data.metrics.heliocentric_range_km[i], data.metrics.speed_km_s[i], data.metrics.earth_range_km[i], data.metrics.mars_range_km[i]]
+      : [data.metrics.earth_range_km[i], data.metrics.speed_km_s[i], data.metrics.moon_distance_km[i]];
+    rows.push([utcAt(data, data.elapsed_s[i]), data.elapsed_s[i], ...data.states.mmx[i], ...values].join(','));
   }
   return rows.join('\r\n') + '\r\n';
 }

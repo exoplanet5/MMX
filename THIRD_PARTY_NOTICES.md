@@ -56,6 +56,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
+## SatObserver-MX stellar reference and d3-celestial
+
+`web/assets/stars.json` is a data-only extraction of the user's SatObserver-MX `app/js/vendor/starcat.js`, derived from [d3-celestial](https://github.com/ofrohn/d3-celestial) and BSC5/HYG. It contains 1,018 stars to magnitude 4.6, 110 names and 150 constellation polylines. Coordinates are rounded J2000 display directions; no proper-motion correction is applied. The original catalog file's SHA-256 and source attribution are retained in the JSON metadata.
+
+The SatObserver reference is MIT-licensed, copyright (c) 2026 Zhuoxiao, under the same MIT notice reproduced above. Its magnitude-dependent star treatment informed the new renderer; its local-horizon projection is not copied into the inertial viewer.
+
+The upstream d3-celestial BSD notice is retained at `web/vendor/CELESTIAL_LICENSE` and embedded in both standalone HTML files:
+
+Copyright (c) 2015, Olaf Frohn
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 ## NASA Blue Marble
 
 `web/assets/earth_day.jpg` is a 2048 × 1024 downsample of the user's shared NASA Blue Marble NG image, `world.topo.bathy.200409.3x21600x10800.jpg` (September 2004 topography/bathymetry base). The image is embedded in `docs/index.html` and credited visibly as NASA Blue Marble. It is used as a geographic illustration, not a contemporaneous cloud/weather map. [NASA Visible Earth Blue Marble collection](https://visibleearth.nasa.gov/collection/1484/blue-marble).

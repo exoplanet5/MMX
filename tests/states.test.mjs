@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { sample, sceneVector, csvText, utcAt } from '../web/states.js';
+import { sample, sceneVector, csvText, utcAt, equatorial } from '../web/states.js';
 const data = JSON.parse(readFileSync(new URL('../docs/data/ephemeris.json', import.meta.url)));
 const fixtures = JSON.parse(readFileSync(new URL('./fixtures.json', import.meta.url)));
 const norm = v => Math.hypot(...v);
@@ -59,4 +59,60 @@ test('CSV download preserves all canonical samples and precision', () => {
   assert.ok(rows[1].startsWith('2026-10-19T21:00:00Z,0,'));
   assert.ok(rows.at(-1).startsWith('2026-10-25T21:00:00Z,518400,'));
   assert.equal(Number(rows[1].split(',')[2]), data.states.mmx[0][0]);
+});
+
+test('geocentric RA/Dec have correct quadrants and polar limits', () => {
+  for (const [vector, ra, dec] of [[[1, 0, 0], 0, 0], [[0, 1, 0], 90, 0], [[-1, 0, 0], 180, 0], [[0, -1, 0], 270, 0], [[1, 0, 1], 0, 45], [[0, 0, -1], 0, -90]]) {
+    const actual = equatorial(vector);
+    assert.ok(Math.abs(actual.ra_deg - ra) < 1e-12);
+    assert.ok(Math.abs(actual.dec_deg - dec) < 1e-12);
+  }
+  for (const t of [0, 86400, 518400]) {
+    const s = sample(data, t);
+    const expected = equatorial(s.mmx);
+    assert.equal(s.ra_deg, expected.ra_deg); assert.equal(s.dec_deg, expected.dec_deg);
+  }
+});
+
+const transfer = JSON.parse(readFileSync(new URL('../docs/data/transfer.json', import.meta.url)));
+const transferFixtures = JSON.parse(readFileSync(new URL('./transfer_fixtures.json', import.meta.url)));
+
+test('transfer uses irregular sampling and ends before the arrival splice', () => {
+  assert.equal(transfer.meta.center_id, 10);
+  assert.equal(transfer.meta.step_s, null);
+  assert.equal(transfer.meta.end_utc, '2027-08-29T04:57:00Z');
+  assert.equal(transfer.meta.samples, 8503);
+  assert.equal(transfer.summary.validation.midpoint_count, 8502);
+  const steps = new Set(transfer.elapsed_s.slice(1).map((t, i) => t - transfer.elapsed_s[i]));
+  assert.deepEqual([...steps].sort((a, b) => a - b), [60, 300, 3600]);
+  assert.deepEqual(sample(transfer, Infinity).mmx, transfer.states.mmx[0]);
+  assert.deepEqual(sample(transfer, transfer.meta.duration_s + 1000).mmx, transfer.states.mmx.at(-1));
+  assert.ok(transfer.summary.arrival_boundary.velocity_integration_discrepancy_km > 8000);
+});
+
+test('all transfer native states and midpoint fixtures retain their frame and velocity', () => {
+  for (let i = 0; i < transfer.elapsed_s.length; i++) assert.ok(difference(sample(transfer, transfer.elapsed_s[i]).mmx, transfer.states.mmx[i]) < 1e-6);
+  for (const f of transferFixtures) {
+    const s = sample(transfer, f.seconds);
+    assert.ok(difference(s.mmx, f.interpolated_mmx) < 1e-5);
+    assert.ok(difference(s.mmx.slice(0, 3), f.horizons_mmx.slice(0, 3)) < 1.477);
+    assert.ok(difference(s.mmx.slice(3), f.horizons_mmx.slice(3)) < .006);
+    assert.ok(difference(s.earth.slice(0, 3), f.earth.slice(0, 3)) < .01);
+    assert.ok(difference(s.mars.slice(0, 3), f.mars.slice(0, 3)) < .01);
+    assert.equal(s.heliocentricRange, norm(s.mmx.slice(0, 3)));
+    assert.ok(Math.abs(s.earthRange - difference(s.mmx.slice(0, 3), s.earth.slice(0, 3))) < 1e-7);
+  }
+});
+
+test('transfer context includes outer planets, complete reference tracks and correct exports', () => {
+  for (const name of ['earth', 'mars', 'jupiter', 'saturn']) {
+    assert.equal(transfer.states[name].length, 8503);
+    assert.equal(transfer.orbits[name].position_km.length, 721);
+  }
+  assert.ok(norm(transfer.states.jupiter[0].slice(0, 3)) / transfer.meta.au_km > 4);
+  assert.ok(norm(transfer.states.saturn[0].slice(0, 3)) / transfer.meta.au_km > 8);
+  const rows = csvText(transfer).trim().split('\r\n');
+  assert.equal(rows.length, 8504);
+  assert.ok(rows[0].includes('heliocentric_range_km'));
+  assert.ok(rows.at(-1).startsWith('2027-08-29T04:57:00Z,'));
 });

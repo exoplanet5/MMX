@@ -1,0 +1,68 @@
+{
+  "validation": {
+    "midpoint_count": 8502,
+    "max_position_error_km": 1.476527889467714,
+    "max_position_error_utc": "2027-02-26T23:30:00Z",
+    "max_velocity_error_km_s": 0.005988352013138961,
+    "max_velocity_error_utc": "2027-08-29T04:56:30Z"
+  },
+  "arrival_boundary": {
+    "before_utc": "2027-08-29T04:57:00Z",
+    "after_utc": "2027-08-29T04:58:00Z",
+    "position_jump_km": 7184.188389731486,
+    "velocity_integration_discrepancy_km": 8106.709039578219,
+    "mars_range_before_km": 3892.0200284484317,
+    "mars_range_after_km": 9275.906479396337,
+    "interpretation": "Discontinuous planning-arc splice, not a resolved physical maneuver. No interpolation/rendered segment crosses it."
+  },
+  "timeline": [
+    {
+      "utc": "2026-10-19T21:00:00Z",
+      "seconds": 0,
+      "title": "Earth departure",
+      "detail": "First displayed planning state; the six-day Earth view starts here.",
+      "kind": "window"
+    },
+    {
+      "utc": "2027-07-21T14:48:19Z",
+      "seconds": 23737699.73709129,
+      "title": "Cruise aphelion",
+      "detail": "Heliocentric maximum 1.5499 AU, derived from this planning arc.",
+      "kind": "geometry"
+    },
+    {
+      "utc": "2027-08-24T21:34:58Z",
+      "seconds": 26699698.222301293,
+      "title": "1,000,000 km from Mars",
+      "detail": "Inbound distance threshold, not an officially timed mission phase.",
+      "kind": "geometry"
+    },
+    {
+      "utc": "2027-08-28T19:47:08Z",
+      "seconds": 27038828.34669218,
+      "title": "100,000 km from Mars",
+      "detail": "Inbound distance threshold, not an officially timed mission phase.",
+      "kind": "geometry"
+    },
+    {
+      "utc": "2027-08-29T04:57:00Z",
+      "seconds": 27071820.0,
+      "title": "Mars arrival boundary",
+      "detail": "Transfer display ends before the 04:57\u201304:58 UTC planning-arc discontinuity. Not a resolved insertion burn.",
+      "kind": "boundary"
+    }
+  ],
+  "start": {
+    "utc": "2026-10-19T21:00:00Z",
+    "heliocentric_range_km": 149002185.87020263,
+    "speed_km_s": 39.64231026522165,
+    "earth_range_km": 8703.971430217807
+  },
+  "end": {
+    "utc": "2027-08-29T04:57:00Z",
+    "heliocentric_range_km": 228863919.8455136,
+    "speed_km_s": 20.068499932708846,
+    "earth_range_km": 289013688.2913739,
+    "mars_range_km": 3892.0200284484317
+  }
+}

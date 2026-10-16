@@ -1,0 +1,300 @@
+{
+  "meta": {
+    "title": "MMX Mars Transfer",
+    "view_kind": "transfer",
+    "target_id": -239,
+    "center_id": 10,
+    "center": "Sun center (10)",
+    "frame": "Heliocentric ICRF equatorial inertial axes",
+    "state_type": "geometric; no light-time or aberration corrections",
+    "time_scale": "UTC",
+    "start_utc": "2026-10-19T21:00:00Z",
+    "end_utc": "2027-08-29T04:57:00Z",
+    "duration_s": 27071820,
+    "samples": 8503,
+    "step_s": null,
+    "sampling": [
+      {
+        "start_utc": "2026-10-19T21:00:00Z",
+        "end_utc": "2026-10-20T03:00:00Z",
+        "step_s": 60
+      },
+      {
+        "start_utc": "2026-10-20T03:00:00Z",
+        "end_utc": "2027-08-27T00:00:00Z",
+        "step_s": 3600
+      },
+      {
+        "start_utc": "2027-08-27T00:00:00Z",
+        "end_utc": "2027-08-29T04:00:00Z",
+        "step_s": 300
+      },
+      {
+        "start_utc": "2027-08-29T04:00:00Z",
+        "end_utc": "2027-08-29T04:57:00Z",
+        "step_s": 60
+      }
+    ],
+    "position_unit": "km",
+    "velocity_unit": "km/s",
+    "au_km": 149597870.7,
+    "earth_radius_km": 6378.137,
+    "status": "JAXA pre-launch planning trajectory; not flight reconstruction",
+    "trajectory_source": "JAXA 20261019_20281231_MMX_V0.2 via JPL Horizons",
+    "source_headers": [
+      "Revised: Oct 07, 2026  Martian Moons eXploration (MMX) spacecraft / Mars  -239",
+      "Target body name: MMX (spacecraft) (-239)         {source: 20261019_20281231_MMX}",
+      "Center body name: Sun (10)                        {source: DE441}"
+    ],
+    "retrieved_utc": "2026-10-16T15:56:34Z",
+    "snapshot": "20261016T155634Z_h114f8ac",
+    "available_ephemeris": "2026-10-19 20:57:30 UTC through 2028-12-31 (end date reported by Horizons)",
+    "arrival_context": "Horizons target description says August 2027; precise boundary is inferred from the planning ephemeris, not an official insertion schedule.",
+    "context_kernel": "JPL DE440s",
+    "context_kernel_sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2",
+    "planet_centers": {
+      "earth": "Earth center (399)",
+      "mars": "Mars system barycenter (4)",
+      "jupiter": "Jupiter system barycenter (5)",
+      "saturn": "Saturn system barycenter (6)"
+    },
+    "accuracy_note": "Interpolation residuals quantify agreement with a planning ephemeris, not future-flight uncertainty. No covariance supplied.",
+    "software": {
+      "numpy": "2.4.2",
+      "scipy": "1.17.1",
+      "skyfield": "1.54",
+      "jplephem": "2.24"
+    }
+  },
+  "raw_manifest": {
+    "retrieved_utc": "2026-10-16T15:56:34Z",
+    "api": "https://ssd.jpl.nasa.gov/api/horizons.api",
+    "requests": {
+      "departure": {
+        "file": "departure.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2026-10-19 21:00:00'",
+          "STOP_TIME": "'2026-10-20 03:00:00'",
+          "STEP_SIZE": "'1 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272026-10-19+21%3A00%3A00%27&STOP_TIME=%272026-10-20+03%3A00%3A00%27&STEP_SIZE=%271+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "968a5e3f643e57016d5a5c0eac28bce6a3642807be532c4e8c389ff2b55707a2",
+        "start_utc": "2026-10-19T21:00:00Z",
+        "end_utc": "2026-10-20T03:00:00Z",
+        "step_s": 60
+      },
+      "departure_checks": {
+        "file": "departure_checks.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2026-10-19 21:00:30'",
+          "STOP_TIME": "'2026-10-20 02:59:30'",
+          "STEP_SIZE": "'1 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272026-10-19+21%3A00%3A30%27&STOP_TIME=%272026-10-20+02%3A59%3A30%27&STEP_SIZE=%271+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "25d763f171565e69e5f647b17310674ce95b9860faa4f6530b7574b026022b1c",
+        "start_utc": "2026-10-19T21:00:30Z",
+        "end_utc": "2026-10-20T02:59:30Z",
+        "step_s": 60
+      },
+      "cruise": {
+        "file": "cruise.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2026-10-20 03:00:00'",
+          "STOP_TIME": "'2027-08-27 00:00:00'",
+          "STEP_SIZE": "'60 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272026-10-20+03%3A00%3A00%27&STOP_TIME=%272027-08-27+00%3A00%3A00%27&STEP_SIZE=%2760+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "638200cbcb89f5b5c28de903d5caaddb729e488bf5ae725654763bd357681cbe",
+        "start_utc": "2026-10-20T03:00:00Z",
+        "end_utc": "2027-08-27T00:00:00Z",
+        "step_s": 3600
+      },
+      "cruise_checks": {
+        "file": "cruise_checks.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2026-10-20 03:30:00'",
+          "STOP_TIME": "'2027-08-26 23:30:00'",
+          "STEP_SIZE": "'60 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272026-10-20+03%3A30%3A00%27&STOP_TIME=%272027-08-26+23%3A30%3A00%27&STEP_SIZE=%2760+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "b04c2bacee7bce0b46fd38c94d29ae72c09693e1cda34bff3227d343713213a8",
+        "start_utc": "2026-10-20T03:30:00Z",
+        "end_utc": "2027-08-26T23:30:00Z",
+        "step_s": 3600
+      },
+      "approach": {
+        "file": "approach.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2027-08-27 00:00:00'",
+          "STOP_TIME": "'2027-08-29 04:00:00'",
+          "STEP_SIZE": "'5 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272027-08-27+00%3A00%3A00%27&STOP_TIME=%272027-08-29+04%3A00%3A00%27&STEP_SIZE=%275+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "89ed1b7049d0c44572d1365b79b9d44e140f72b36fd345e88d62d3c791f86cc9",
+        "start_utc": "2027-08-27T00:00:00Z",
+        "end_utc": "2027-08-29T04:00:00Z",
+        "step_s": 300
+      },
+      "approach_checks": {
+        "file": "approach_checks.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2027-08-27 00:02:30'",
+          "STOP_TIME": "'2027-08-29 03:57:30'",
+          "STEP_SIZE": "'5 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272027-08-27+00%3A02%3A30%27&STOP_TIME=%272027-08-29+03%3A57%3A30%27&STEP_SIZE=%275+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "565deed826cf5636195884fac36347d05b65288156beabea65b19b972a04cd7c",
+        "start_utc": "2027-08-27T00:02:30Z",
+        "end_utc": "2027-08-29T03:57:30Z",
+        "step_s": 300
+      },
+      "terminal": {
+        "file": "terminal.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2027-08-29 04:00:00'",
+          "STOP_TIME": "'2027-08-29 04:57:00'",
+          "STEP_SIZE": "'1 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272027-08-29+04%3A00%3A00%27&STOP_TIME=%272027-08-29+04%3A57%3A00%27&STEP_SIZE=%271+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "79f243e6a7ff0660b057943aacd863b9233948e3509fae32448b7b9006534bed",
+        "start_utc": "2027-08-29T04:00:00Z",
+        "end_utc": "2027-08-29T04:57:00Z",
+        "step_s": 60
+      },
+      "terminal_checks": {
+        "file": "terminal_checks.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2027-08-29 04:00:30'",
+          "STOP_TIME": "'2027-08-29 04:56:30'",
+          "STEP_SIZE": "'1 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272027-08-29+04%3A00%3A30%27&STOP_TIME=%272027-08-29+04%3A56%3A30%27&STEP_SIZE=%271+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "1ab94911a7b397db8d943aa3e4b84d5b344e393a4edbd54bc5e10ea6efcdfa37",
+        "start_utc": "2027-08-29T04:00:30Z",
+        "end_utc": "2027-08-29T04:56:30Z",
+        "step_s": 60
+      },
+      "arrival_boundary": {
+        "file": "arrival_boundary.json",
+        "parameters": {
+          "format": "json",
+          "COMMAND": "'-239'",
+          "EPHEM_TYPE": "'VECTORS'",
+          "CENTER": "'500@10'",
+          "START_TIME": "'2027-08-29 04:55:00'",
+          "STOP_TIME": "'2027-08-29 05:00:00'",
+          "STEP_SIZE": "'1 m'",
+          "REF_SYSTEM": "'ICRF'",
+          "REF_PLANE": "'FRAME'",
+          "TIME_TYPE": "'UT'",
+          "VEC_CORR": "'NONE'",
+          "OUT_UNITS": "'KM-S'",
+          "VEC_TABLE": "'2'",
+          "CSV_FORMAT": "'YES'",
+          "CAL_FORMAT": "'CAL'"
+        },
+        "url": "https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND=%27-239%27&EPHEM_TYPE=%27VECTORS%27&CENTER=%27500%4010%27&START_TIME=%272027-08-29+04%3A55%3A00%27&STOP_TIME=%272027-08-29+05%3A00%3A00%27&STEP_SIZE=%271+m%27&REF_SYSTEM=%27ICRF%27&REF_PLANE=%27FRAME%27&TIME_TYPE=%27UT%27&VEC_CORR=%27NONE%27&OUT_UNITS=%27KM-S%27&VEC_TABLE=%272%27&CSV_FORMAT=%27YES%27&CAL_FORMAT=%27CAL%27",
+        "sha256": "68ef35c0e9059438224846cacbaf4ed1d5eb2e150e031e3244ecd358bfd52a63",
+        "start_utc": "2027-08-29T04:55:00Z",
+        "end_utc": "2027-08-29T05:00:00Z",
+        "step_s": 60
+      }
+    }
+  }
+}

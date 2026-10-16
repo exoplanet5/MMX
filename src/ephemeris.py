@@ -43,8 +43,8 @@ def write_json(path, value, pretty=False):
                                separators=None if pretty else (",", ":"), allow_nan=False) + "\n")
 
 
-def request_params(target, start, stop, step):
-    values = dict(COMMAND=str(target), EPHEM_TYPE="VECTORS", CENTER="500@399",
+def request_params(target, start, stop, step, center=399):
+    values = dict(COMMAND=str(target), EPHEM_TYPE="VECTORS", CENTER=f"500@{center}",
                   START_TIME=start.strftime("%Y-%m-%d %H:%M:%S"),
                   STOP_TIME=stop.strftime("%Y-%m-%d %H:%M:%S"), STEP_SIZE=step,
                   REF_SYSTEM="ICRF", REF_PLANE="FRAME", TIME_TYPE="UT", VEC_CORR="NONE",
@@ -52,13 +52,14 @@ def request_params(target, start, stop, step):
     return {"format": "json", **{k: f"'{v}'" for k, v in values.items()}}
 
 
-def parse_response(path, target, start, stop, step_seconds):
+def parse_response(path, target, start, stop, step_seconds, center=399):
     response = json.loads(path.read_text())
     if response.get("error"):
         raise ValueError(response["error"])
     result = response.get("result", "")
     header = result.split("$$SOE")[0]
-    required = [f"({target})", "Center body name: Earth (399)", "Reference frame : ICRF",
+    center_name = {399: "Earth", 10: "Sun"}[center]
+    required = [f"({target})", f"Center body name: {center_name} ({center})", "Reference frame : ICRF",
                 "Output units    : KM-S", "GEOMETRIC cartesian states", "Calendar Date (UT"]
     if not all(token in header for token in required):
         raise ValueError(f"Unexpected target/frame/time/unit metadata in {path}")

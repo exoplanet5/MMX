@@ -1,126 +1,116 @@
-# MMX Earth Departure
+# MMX trajectory explorers
 
-**[Open the interactive orbit viewer](https://exoplanet5.github.io/MMX/)** · [Scientific study](study.md) · [CSV ephemeris](docs/data/mmx_eci.csv) · [JSON states](docs/data/ephemeris.json)
+**[Earth departure](https://exoplanet5.github.io/MMX/)** · **[Mars transfer](https://exoplanet5.github.io/MMX/transfer.html)** · [Transfer timeline and methods](transfer-study.md)
 
-An Earth-centered inertial study of JAXA's Martian Moons eXploration spacecraft, **JPL Horizons ID −239**, covering **2026-10-19 21:00:00 to 2026-10-25 21:00:00 UTC**, inclusive.
+Two linked, standalone scientific viewers for JAXA's Martian Moons eXploration spacecraft, **JPL Horizons ID −239**. Both show geometric ICRF states and a catalog-based stellar reference.
 
-> **Pre-launch planning trajectory, not flight reconstruction.** The source is JAXA `20261019_20281231_MMX_V0.2`, accessed through JPL Horizons on October 16, 2026. The trajectory can change. No orbit covariance or prediction-accuracy envelope was supplied.
+> **Pre-launch planning ephemeris, not flight reconstruction.** The source is JAXA `20261019_20281231_MMX_V0.2` via JPL Horizons. No flight-prediction covariance or uncertainty envelope was supplied.
 
-## Findings
+## Earth departure
 
-| Quantity | 19 Oct, 21:00 UTC | 25 Oct, 21:00 UTC |
-|---|---:|---:|
-| Distance from Earth's center | 8,703.971 km | 1,776,012.255 km |
-| Earth-relative inertial speed | 10.077174 km/s | 3.227642 km/s |
-| Distance from the Moon's center | 399,534.546 km | 1,911,515.309 km |
+**2026-10-19 21:00:00 → 2026-10-25 21:00:00 UTC**
 
-Earth range and Moon separation increase at every one-minute sample. The smallest sampled lunar separation is at the **start boundary**, not at a lunar flyby. The interval begins after launch; the viewer does not reconstruct ascent or any earlier trajectory.
+- The camera is centered on Earth. **Both left-drag and right-drag orbit Earth**, with panning disabled. Saved view links cannot move the pivot away from Earth.
+- Full six-day and near-Earth-detail views, plus **Reset to Earth**.
+- Right panel: **Earth range, geocentric speed, geometric geocentric right ascension and declination** only.
+- **Moon on by default.** Its solid six-day path has an independent checkbox and is **off by default**.
+- **RA/Dec grid, stellar background and constellation lines are on by default**, with independent controls.
+- The former Cartesian plane presets, inertial-axis layer and scientific-figure links have been removed from the page.
 
-The initial Earth-only osculating eccentricity is **1.168754**, and instantaneous C3 is **9.958959 km²/s²**, consistent with an Earth-escape state. These are instantaneous diagnostics, not a Keplerian propagation model.
+Earth-center distance grows from **8,703.971 km** to **1,776,012.255 km**; geocentric speed decreases from **10.077174 km/s** to **3.227642 km/s**.
 
-## Figures
+## Mars transfer
 
-All four figures use the same canonical states as the viewer. PNGs are 2880 × 1782 pixels, with equal physical scale on spatial axes, UTC labeling and explicit planning-data attribution.
+**2026-10-19 21:00:00 → 2027-08-29 04:57:00 UTC**
 
-| Figure | Content |
+- **Sun-centered by default**, zoomed to contain the full Mars reference orbit.
+- Earth, Mars, **Jupiter and Saturn**, with an independent solid-orbit layer and an outer-planet-scale preset.
+- Left-drag orbits the current pivot; **right-drag pans it through space**, after which left-drag orbits that new pivot. **Reset to Sun** restores the default center and scale.
+- Right panel: **heliocentric distance, heliocentric speed and Earth range** only.
+- The same optional stellar background, bright-star labels, constellation lines and RA/Dec grid as the Earth page.
+- Clickable planning-geometry milestones, UTC playback/scrubbing, state table and full-precision downloads.
+
+**Why the window ends at 04:57:** the planning ephemeris has a large position discontinuity between **04:57 and 04:58 UTC on August 29**. The transfer page stops before this splice; it does not invent a continuous capture maneuver. Horizons describes arrival only as **August 2027**. This sampled model boundary is **not an official orbit-insertion timestamp**.
+
+### Transfer timeline
+
+Times below are geometry estimates from the planning ephemeris, not operational commitments.
+
+| UTC | Milestone |
 |---|---|
-| [ECI overview](docs/plots/01_eci_overview.png) | Full-window X–Y and X–Z projections, daily epochs and contemporaneous lunar context |
-| [3D ECI view](docs/plots/02_eci_3d.png) | Full-window three-dimensional departure geometry |
-| [Departure detail](docs/plots/03_departure_zoom.png) | First three hours, with Earth drawn at its true radius |
-| [Distance and speed](docs/plots/04_range_speed.png) | Earth range, Moon separation and inertial speed on separate panels |
+| 2026-10-19 21:00 | First displayed Earth-departure state |
+| 2027-07-21 about 14:48 | Cruise heliocentric maximum, approximately **1.5499 AU** |
+| 2027-08-24 about 21:35 | Inbound crossing of **1,000,000 km** from Mars |
+| 2027-08-28 about 19:47 | Inbound crossing of **100,000 km** from Mars |
+| 2027-08-29 04:57 | Final continuous inbound sample shown; immediately before the arrival-model splice |
 
-![MMX ECI overview](docs/plots/01_eci_overview.png)
+## Stellar reference and coordinate conventions
 
-## Interactive viewer
+The background reuses SatObserver-MX's derived **d3-celestial / BSC5 / HYG** catalog: **1,018 stars**, **110 bright-star names**, and **150 constellation polylines**. Grid spacing is **2 hours in RA and 30° in declination**. Stars are rendered at infinity in a separate camera-rotation-only scene, so solar-view panning introduces no false stellar parallax.
 
-The viewer includes:
+The catalog is a rounded J2000 display catalog, without proper-motion correction. It is an orientation reference, not a precision observing chart. An external orbit-view camera does not reproduce the sky seen by an observer at Earth's center; the displayed geocentric RA/Dec values are independently calculated from the Earth-to-MMX vector.
 
-- Orbit, zoom and pan controls; full-path, departure, XY, XZ and YZ camera presets.
-- UTC scrubbing, playback, speed selection, exact date input and day/endpoint jumps.
-- Earth rotation in a **nonrotating inertial scene**, simultaneous Moon position, and labeled inertial axes.
-- Live geometric state readouts, linked diagnostic charts, a paginated sample table and full-precision CSV/JSON downloads.
-- Keyboard controls, mobile panels, a non-WebGL fallback and reduced-motion support.
-- Copyable view links containing epoch and camera state.
+- **Axes:** ICRF equatorial inertial, closely aligned with J2000; not ecliptic or Earth-fixed.
+- **Earth page origin:** Earth center, Horizons `CENTER='500@399'`.
+- **Transfer origin:** Sun center, Horizons `CENTER='500@10'`.
+- **Both queries:** `REF_PLANE='FRAME'`, `REF_SYSTEM='ICRF'`, `TIME_TYPE='UT'` (UTC here), `VEC_CORR='NONE'`, `OUT_UNITS='KM-S'`, `VEC_TABLE='2'`.
+- **Display mapping:** `(X,Y,Z) → (X,Z,−Y)`, uniformly scaled by Earth's radius or the astronomical unit. It is right-handed and does not alter reported coordinates.
+- **RA/Dec:** `atan2(Y,X)` wrapped to 0–24 hours; `atan2(Z,hypot(X,Y))` in degrees. These are geometric, not light-time/apparent coordinates.
+- **Planetary context:** simultaneous DE440s states. Earth uses its center; Mars, Jupiter and Saturn use their system barycenters. Transfer orbit lines trace one nominal orbital period from the start epoch, not merely the transfer dates.
+- **Earth texture:** NASA Blue Marble; only the globe rotates, using baked Skyfield Earth-orientation quaternions. Polar motion is omitted. Visibility markers are enlarged independently of physical radii.
 
-**`docs/index.html` is standalone (about 5.1 MiB).** Double-click it or open it in a browser; it embeds its JavaScript, trajectory data and NASA Earth texture. It makes no runtime network requests and requires no server or CDN. Linked static figures require the adjacent `docs/plots/` directory, or use their public website URLs. Data downloads work from the embedded dataset.
+## Data and verification
 
-Default playback is paused. The timeline's elapsed time is measured from **19 October 21:00 UTC**, not from launch. All portions of the displayed path are planning states; moving the time slider does not make them flown states.
+| Dataset | Stored states | Independent midpoint checks | Maximum checked position residual | Maximum checked velocity residual |
+|---|---:|---:|---:|---:|
+| Earth departure | 8,641 | 8,640 | 5.281 m | 2.233 m/s |
+| Mars transfer | 8,503 | 8,502 | 1.477 km | 5.988 m/s |
 
-## Scientific conventions
+The Earth page has uniform 60-second sampling. The transfer uses 60 seconds for the first six hours, one hour through cruise, five minutes during the last approach, and 60 seconds during the terminal inbound hour. Both use cubic Hermite interpolation from positions and velocities, with derivative velocities and no extrapolation. These residuals are **agreement checks against the planning ephemeris**, not flight-accuracy claims or rigorous continuous-time error bounds.
 
-- **Origin:** Earth's center, Horizons `CENTER='500@399'`.
-- **Axes:** ICRF equatorial inertial axes, `REF_SYSTEM='ICRF'`, **`REF_PLANE='FRAME'`**. ICRF is closely aligned with J2000, but is not exactly FK5/J2000. This is neither ecliptic nor Earth-fixed.
-- **State type:** geometric Cartesian position and velocity, `VEC_CORR='NONE'`.
-- **Units:** km and km/s.
-- **Epochs:** `TIME_TYPE='UT'`, which Horizons defines as UTC for these modern dates. The six-day interval contains **8,641 samples at 60-second cadence**.
-- **Moon/Sun context:** simultaneous geometric DE440s states, evaluated after proper UTC-to-TDB conversion. Horizons identifies DE441 for its Earth center; seven independent lunar comparisons measure the small contextual difference.
-- **Display rotation:** `(X,Y,Z) → (X,Z,−Y)/6378.137`, a right-handed change to Three.js's Y-up display axes. Numeric readouts stay in original ECI coordinates.
-- **Earth orientation:** precomputed Skyfield ITRS-to-ICRF quaternions; bundled timescale data, precession/nutation and UT1, with polar motion omitted. Earth rotation never rotates the spacecraft trajectory. The globe is spherical, radius 6,378.137 km; point markers are enlarged independently.
+Downloads:
 
-### Validation
+- Earth: [CSV](docs/data/mmx_eci.csv), [JSON](docs/data/ephemeris.json), [provenance](docs/data/provenance.json).
+- Transfer: [CSV](docs/data/mmx_transfer.csv), [JSON](docs/data/transfer.json), [summary/timeline](docs/data/transfer_summary.json), [provenance](docs/data/transfer_provenance.json).
+- Original departure analysis and static plots remain available in [study.md](study.md) and `docs/plots/`, outside the streamlined viewer interface.
 
-The one-minute trajectory was checked against **8,640 additional Horizons states at the intervening 30-second epochs**:
+## Open locally or rebuild
 
-| Check | Largest measured residual |
-|---|---:|
-| Cubic Hermite position vs. withheld Horizons positions | **5.281 m** |
-| Derivative velocity vs. withheld Horizons velocities | **2.233 m/s** |
-| DE440s Moon position vs. seven Horizons checks | **2.469 m** |
+`docs/index.html` and `docs/transfer.html` are standalone pages, approximately **5.1 MiB** and **6.6 MiB**. Each embeds its code, data and assets. Double-click either file; keep them beside each other for cross-page navigation. No runtime server, CDN, ephemeris request or login is required.
 
-These are **interpolation and cross-ephemeris checks**, not estimates of future spacecraft prediction uncertainty. The maximum position and velocity residuals occur in the first two minutes of the interval; exact sample states retain the original Horizons velocities. Position and speed are never extrapolated.
-
-## Reproduce
-
-Python defaults to `~/.venvs/astro313/bin/python`. Use the shared kernel **`~/JPLDE/de440s.bsp`**; do not place a DE kernel in this repository. Required Python package versions are recorded in `requirements.txt`. Node/npm are needed only to rebuild or test the HTML, not to view it.
+Use the shared **`~/JPLDE/de440s.bsp`** kernel; never copy a planetary kernel into this repository. The default Python is `~/.venvs/astro313/bin/python`. Pinned dependencies are in `requirements.txt` and the npm lockfile.
 
 ```sh
-# Rebuild canonical data from the archived snapshot, without network access.
+# Offline rebuilds from the archived snapshots.
 ~/.venvs/astro313/bin/python -I src/ephemeris.py
+~/.venvs/astro313/bin/python -I src/transfer.py
 
-# Rebuild figures.
-~/.venvs/astro313/bin/python -I src/plots.py
-
-# Install pinned build/test dependencies without package lifecycle scripts.
 npm ci --ignore-scripts
 npm run build
 
-# Numerical, interpolation and browser checks.
-~/.venvs/astro313/bin/python -I tests/test_ephemeris.py
+# Numerical, geometry, interpolation and browser checks.
+~/.venvs/astro313/bin/python -I -m unittest discover -s tests -p 'test_*.py'
 npm test
 npm run test:browser
-```
 
-Browser checks use an existing Chrome installation. The macOS default is `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`; set `CHROME_PATH` to another Chrome/Chromium executable when needed. No browser download is required. Screenshots and test downloads go to ignored `test-results/`.
-
-A **network refresh is explicit**, and writes a new immutable raw snapshot:
-
-```sh
+# Explicit network refreshes create new immutable source snapshots.
 ~/.venvs/astro313/bin/python -I src/ephemeris.py --refresh
-# Optional explicit inputs:
-~/.venvs/astro313/bin/python -I src/ephemeris.py --snapshot data/raw/<snapshot> --kernel ~/JPLDE/de440s.bsp
+~/.venvs/astro313/bin/python -I src/transfer.py --refresh
 ```
 
-Review the new source/version, diagnostics and interpolation residuals before deploying refreshed data. The report's quoted results refer to the original archived planning snapshot. Python scripts communicate through JSON and work with isolated mode (`-I`).
+Both Python entry points accept `--snapshot <directory>` and `--kernel <path>`. The transfer pipeline refuses a refresh if the arrival discontinuity has moved or the interpolation tolerance is exceeded; re-study the transfer window rather than silently connecting different planning arcs. Reported results refer to the archived snapshots.
 
-## Repository layout
+Browser tests use an existing Chrome installation. The macOS default is `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`; override `CHROME_PATH` elsewhere. They exercise real left/right drag behavior, center locking, free-pan pivots, infinite-distance stellar rendering, layer defaults, page navigation, RA/Dec, endpoints, downloads, saved views, and mobile layouts. Test output is ignored under `test-results/`; use `npm run test:browser -- --screenshots` to capture the desktop/mobile reference views.
 
-- `data/raw/<snapshot>/`: original Horizons responses, requests, retrieval times and SHA-256 manifest.
-- `src/ephemeris.py`: fetch/cache validation, planetary context, Earth orientation, canonical exports and fixtures.
-- `src/plots.py`: the four publication figures, generated from canonical JSON.
-- `web/`: maintained UI/rendering/interpolation sources, vendored Three.js r170 and reduced-resolution Earth image.
-- `scripts/build_site.mjs`: bundles all runtime dependencies into one HTML file.
-- `docs/`: published standalone page, normalized data, provenance, summary and figures.
-- `tests/`: Python acceptance checks, JavaScript interpolation tests, shared reference fixtures and browser checks.
+## Implementation and deployment
 
-GitHub Pages serves **`main` → `/docs`**. No backend, live Horizons calls, external runtime assets or Actions build workflow is required.
+- `src/ephemeris.py`, `src/transfer.py`: raw capture, validation, canonical state exports and scientific fixtures.
+- `data/raw/`, `data/transfer_raw/`: immutable Horizons responses, exact queries, retrieval times and hashes.
+- `web/app.js`, `web/states.js`, `web/sky.js`: shared viewer, interpolation/coordinate math and stellar scene.
+- `web/index.template.html`, `scripts/build_site.mjs`: build both linked, self-contained pages.
+- `web/assets/stars.json`: attributed, rounded stellar reference derived from SatObserver.
+- `docs/`: published pages, data and archived figures.
 
-## Attribution and sources
+GitHub Pages serves **`main` → `/docs`** at [exoplanet5.github.io/MMX](https://exoplanet5.github.io/MMX/). The existing Apache-2.0 [LICENSE](LICENSE) is retained; third-party MIT/BSD notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the embedded bundles.
 
-Illustration: **Mickey**. Visual treatment follows the Chang'e 3 ECI study and the Starship IFT-14 viewer. Zhuque-2E-Y7 supplied a diagnostic-plot reference; its inspected checkout did not contain an interactive page.
-
-- [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) and [API documentation](https://ssd-api.jpl.nasa.gov/doc/horizons.html).
-- [JAXA MMX mission](https://www.mmx.jaxa.jp/en/mission/).
-- NASA Blue Marble Earth base image.
-- [Third-party notices](THIRD_PARTY_NOTICES.md), including the Starship reference and Three.js MIT licenses.
-
-The repository retains its Apache-2.0 [LICENSE](LICENSE). This is an independent study and is not an official JAXA or JPL service.
+**Illustration: Mickey.** Sources: [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/), [Horizons API](https://ssd-api.jpl.nasa.gov/doc/horizons.html), [JAXA MMX](https://www.mmx.jaxa.jp/en/mission/), and [d3-celestial](https://github.com/ofrohn/d3-celestial). This is an independent study, not an official agency service.
