@@ -70,3 +70,30 @@ export function csvText(data) {
   }
   return rows.join('\r\n') + '\r\n';
 }
+
+export const GM_SUN_KM3_S2 = 132712440041.279, OBLIQUITY_J2000_DEG = 23.4392911;
+const vdot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const vcross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+// Instantaneous two-body conic through a state. Inclination is referred to the ICRF equator, or to the J2000 ecliptic;
+// the periapsis/orbit-normal basis P, Q stays in the input frame for drawing.
+export function osculating(state, mu, ecliptic = false) {
+  const r = state.slice(0, 3), v = state.slice(3, 6), rn = Math.hypot(...r), v2 = vdot(v, v), h = vcross(r, v), hn = Math.hypot(...h);
+  const ev = r.map((x, k) => ((v2 - mu / rn) * x - vdot(r, v) * v[k]) / mu), e = Math.hypot(...ev);
+  const energy = v2 / 2 - mu / rn, p = hn * hn / mu, P = e > 1e-10 ? ev.map(x => x / e) : r.map(x => x / rn);
+  const Q = vcross(h, P).map(x => x / hn), eps = OBLIQUITY_J2000_DEG * Math.PI / 180;
+  const hz = ecliptic ? -h[1] * Math.sin(eps) + h[2] * Math.cos(eps) : h[2];
+  return { e, p, P, Q, c3: 2 * energy, a: -mu / (2 * energy), inclination: Math.acos(Math.max(-1, Math.min(1, hz / hn))) * 180 / Math.PI,
+    periapsis: p / (1 + e), apoapsis: e < 1 ? p / (1 - e) : Infinity, period: e < 1 ? 2 * Math.PI * Math.sqrt((-mu / (2 * energy)) ** 3 / mu) : Infinity,
+    trueAnomaly: Math.atan2(vdot(r, Q), vdot(r, P)) };
+}
+
+// Points along the conic: the whole ellipse, or a hyperbola from periapsis outward to rMax.
+export function conicPoints(orbit, count, rMax = Infinity) {
+  const { e, p, P, Q } = orbit;
+  const end = e < 1 ? 2 * Math.PI : Math.acos(Math.max(-1, Math.min(1, (p / rMax - 1) / e)));
+  return Array.from({ length: count }, (_, i) => {
+    const nu = end * i / (count - 1), r = p / (1 + e * Math.cos(nu));
+    return [0, 1, 2].map(k => r * (Math.cos(nu) * P[k] + Math.sin(nu) * Q[k]));
+  });
+}

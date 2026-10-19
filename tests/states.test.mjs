@@ -154,3 +154,33 @@ test('transfer context includes outer planets, complete reference tracks and cor
   assert.ok(rows[0].includes('heliocentric_range_km'));
   assert.ok(rows.at(-1).startsWith('2027-08-29T04:57:00Z,'));
 });
+
+test('osculating geocentric conic matches the pipeline diagnostics and passes through the state', async () => {
+  const { osculating, conicPoints } = await import('../web/states.js');
+  const summary = JSON.parse(readFileSync(new URL('../docs/data/summary.json', import.meta.url)));
+  const mu = data.meta.earth_mu_km3_s2;
+  for (const [key, index] of [['start', 0], ['end', data.states.mmx.length - 1]]) {
+    const o = osculating(data.states.mmx[index], mu), ref = summary[key];
+    assert.ok(Math.abs(o.c3 - ref.earth_only_c3_km2_s2) < 1e-9);
+    assert.ok(Math.abs(o.e - ref.osculating_eccentricity) < 1e-12);
+    assert.ok(Math.abs(o.inclination - ref.osculating_inclination_deg) < 1e-9);
+    const r = norm(data.states.mmx[index].slice(0, 3));
+    assert.ok(Math.abs(o.p / (1 + o.e * Math.cos(o.trueAnomaly)) - r) < 1e-6 * r, 'conic radius at the current true anomaly');
+  }
+  const start = osculating(data.states.mmx[0], mu), points = conicPoints(start, 241, 2e6);
+  assert.ok(Math.abs(norm(points[0]) - start.periapsis) < 1e-6 && Math.abs(norm(points.at(-1)) - 2e6) < 1e-3);
+  assert.ok(start.e > 1 && start.c3 > 9.9 && start.periapsis > 6378.137 && start.periapsis < 7000, 'hyperbolic escape from a low perigee');
+});
+
+test('heliocentric ecliptic transfer ellipse spans Earth to Mars distances', async () => {
+  const { osculating, conicPoints, GM_SUN_KM3_S2 } = await import('../web/states.js');
+  const t = JSON.parse(readFileSync(new URL('../docs/data/transfer.json', import.meta.url)));
+  const cruise = osculating(t.states.mmx[Math.floor(t.states.mmx.length / 2)], GM_SUN_KM3_S2, true), au = t.meta.au_km;
+  assert.ok(cruise.e > .1 && cruise.e < .3 && cruise.inclination < 3, `e ${cruise.e}, i ${cruise.inclination}`);
+  assert.ok(cruise.periapsis / au > .95 && cruise.periapsis / au < 1.05 && cruise.apoapsis / au > 1.45 && cruise.apoapsis / au < 1.7);
+  assert.ok(cruise.period / 86400 > 400 && cruise.period / 86400 < 600);
+  const ring = conicPoints(cruise, 361);
+  assert.ok(norm(ring[0].map((x, k) => x - ring.at(-1)[k])) < 1e-3 * au, 'closed ellipse');
+  const equatorial = osculating(t.states.mmx[0], GM_SUN_KM3_S2);
+  assert.ok(Math.abs(equatorial.inclination - 23.4) < 2, 'equatorial inclination is near the obliquity');
+});

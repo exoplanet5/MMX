@@ -66,7 +66,7 @@ THE SOFTWARE.
 
 `web/assets/stars.json` is a data-only extraction of the user's SatObserver-MX `app/js/vendor/starcat.js`, derived from [d3-celestial](https://github.com/ofrohn/d3-celestial) and BSC5/HYG. It contains 1,018 stars to magnitude 4.6, 110 names and 150 constellation polylines. Coordinates are rounded J2000 display directions; no proper-motion correction is applied. The original catalog file's SHA-256 and source attribution are retained in the JSON metadata.
 
-The SatObserver reference is MIT-licensed, copyright (c) 2026 Zhuoxiao, under the same MIT notice reproduced above. Its magnitude-dependent star treatment informed the new renderer; its local-horizon projection is not copied into the inertial viewer.
+The SatObserver reference is MIT-licensed, copyright (c) 2026 Zhuoxiao, under the same MIT notice reproduced above. Its magnitude-dependent star treatment informed the inertial renderer. The Earth page's ground sky-chart window adapts SatObserver-MX `app/js/skychart.js` (window, toolbar, HUD, twilight sky shading, Moon-phase drawing, all-sky polar projection and pass-time ticks) by way of the user's Apache-2.0 CZ-6A launch viewer. The partial-sky gnomonic field, WGS84 site rotation through the baked Earth-orientation quaternions, pass search and Asian site catalog are new here.
 
 The upstream d3-celestial BSD notice is retained at `web/vendor/CELESTIAL_LICENSE` and embedded in both standalone HTML files:
 
