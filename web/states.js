@@ -87,13 +87,3 @@ export function osculating(state, mu, ecliptic = false) {
     periapsis: p / (1 + e), apoapsis: e < 1 ? p / (1 - e) : Infinity, period: e < 1 ? 2 * Math.PI * Math.sqrt((-mu / (2 * energy)) ** 3 / mu) : Infinity,
     trueAnomaly: Math.atan2(vdot(r, Q), vdot(r, P)) };
 }
-
-// Points along the conic: the whole ellipse, or a hyperbola from periapsis outward to rMax.
-export function conicPoints(orbit, count, rMax = Infinity) {
-  const { e, p, P, Q } = orbit;
-  const end = e < 1 ? 2 * Math.PI : Math.acos(Math.max(-1, Math.min(1, (p / rMax - 1) / e)));
-  return Array.from({ length: count }, (_, i) => {
-    const nu = end * i / (count - 1), r = p / (1 + e * Math.cos(nu));
-    return [0, 1, 2].map(k => r * (Math.cos(nu) * P[k] + Math.sin(nu) * Q[k]));
-  });
-}

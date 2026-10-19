@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import { sample, sceneVector, utcAt, csvText, solarTerminator, osculating, conicPoints, GM_SUN_KM3_S2 } from './states.js';
+import { sample, sceneVector, utcAt, csvText, solarTerminator, osculating, GM_SUN_KM3_S2 } from './states.js';
 import { StellarBackground } from './sky.js';
 import { SKY_STYLE } from './sky-style.js';
 import { createSkyChart } from './skychart.js';
@@ -24,12 +24,10 @@ const initialTime = Number(query.get('t') || 0);
 const state = { t: Number.isFinite(initialTime) ? Math.max(0, Math.min(duration, initialTime)) : 0,
   playing: false, speed: transfer ? 86400 : 3600,
   view: allowedViews.includes(query.get('view')) ? query.get('view') : allowedViews[0],
-  moon: true, moonOrbit: false, planets: true, orbits: true, grid: true, stars: true, constellations: true, labels: true, places: true, osculating: true };
+  moon: true, moonOrbit: false, planets: true, orbits: true, grid: true, stars: true, constellations: true, labels: true, places: true };
 let current = sample(D, state.t), renderer, scene, camera, controls, sky, earth, mmxMarker, earthMarker, sunLight;
-let moonPath, earthTerminator, epochGroup, departureGroup, labelLayer, osculatingLine, perigeeMarker, renderReady = false, lastTime = null, lastUI = 0;
-// Osculating conic: whole heliocentric ellipse, or the geocentric hyperbola from perigee out to the window's largest range.
-const mu = transfer ? GM_SUN_KM3_S2 : M.earth_mu_km3_s2, conicCount = transfer ? 361 : 241;
-const conicLimit = transfer ? Infinity : Math.max(...D.metrics.earth_range_km) * 1.05;
+let moonPath, earthTerminator, epochGroup, departureGroup, labelLayer, renderReady = false, lastTime = null, lastUI = 0;
+const mu = transfer ? GM_SUN_KM3_S2 : M.earth_mu_km3_s2;
 const terminatorAxis = new THREE.Vector3(0, 0, 1), terminatorLift = 1.0002;
 let lastWidth = 0, lastHeight = 0, cameraEdited = false;
 const planetNodes = {}, orbitNodes = {}, lineMaterials = [], labels = [];
@@ -260,9 +258,6 @@ function setupScene() {
   mmxMarker = pointMarker(C.pale, 14, true, true); scene.add(mmxMarker);
   addLabel('MMX', () => mmxMarker.position, 'mmx', [11, 9]);
   scene.add(makeLine(D.states.mmx.map(vector), C.blue, 2.3));
-  osculatingLine = makeLine(Array.from({ length: conicCount }, () => new THREE.Vector3()), C.pale, 1.2, .7); osculatingLine.frustumCulled = false;
-  osculatingLine.material.dashed = true;
-  perigeeMarker = pointMarker(C.pale, 7); scene.add(osculatingLine, perigeeMarker);
   if (transfer) {
     sunLight = new THREE.PointLight(0xffffff, 2.3, 0, 0); scene.add(sunLight);
     addPlanet('sun', 695700, '#f2d49b');
@@ -324,20 +319,9 @@ function setupScene() {
   });
 }
 
-// Rewrites the fixed-size Line2 segment buffer in place, so playback does not allocate new geometry every frame.
-function updateOsculating() {
-  osculatingLine.visible = perigeeMarker.visible = state.osculating;
-  if (!state.osculating) return;
-  const points = conicPoints(osculating(current.mmx, mu), conicCount, conicLimit).map(p => sceneVector(p, unit));
-  const buffer = osculatingLine.geometry.attributes.instanceStart.data, array = buffer.array;
-  for (let i = 0; i < conicCount - 1; i++) array.set([...points[i], ...points[i + 1]], 6 * i);
-  buffer.needsUpdate = true; osculatingLine.geometry.computeBoundingSphere(); osculatingLine.computeLineDistances();
-  perigeeMarker.position.set(...points[0]);
-}
-
 const q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
 function updateScene() {
-  mmxMarker.position.copy(vector(current.mmx)); updateOsculating();
+  mmxMarker.position.copy(vector(current.mmx));
   if (transfer) {
     for (const name of ['earth', 'mars', 'jupiter', 'saturn']) {
       const node = planetNodes[name]; node.mesh.position.copy(vector(current[name])); node.marker.position.copy(node.mesh.position);
@@ -414,9 +398,6 @@ function frame(now) {
     if (!transfer) controls.target.set(0, 0, 0);
     controls.update(); camera.updateMatrixWorld(true);
     epochGroup.visible = state.labels && (transfer ? camera.position.distanceTo(controls.target) < 18 : state.view !== 'departure');
-    // Dashes are in world units; scaling them with camera distance keeps them about 12 px long on screen.
-    const dash = camera.position.distanceTo(controls.target) * .011;
-    osculatingLine.material.dashSize = dash; osculatingLine.material.gapSize = dash * .8;
     renderer.clear(); sky.render(renderer, camera, state); renderer.clearDepth(); renderer.render(scene, camera);
     positionLabels();
     if (transfer) $('scene-hint').textContent = controls.target.length() > 1e-7 ? 'Orbiting the panned pivot · Reset to Sun recenters.' : 'Sun at the camera pivot · zoom out for Jupiter and Saturn.';
@@ -424,42 +405,11 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-let tablePage = 0;
-function buildTable() {
-  const cadence = { daily: 86400, hourly: 3600, all: 0 }[$('table-step').value], indices = [];
-  let next = 0;
-  for (let i = 0; i < D.elapsed_s.length; i++) if (D.elapsed_s[i] >= next || i === D.elapsed_s.length - 1) {
-    indices.push(i); next = cadence ? (Math.floor(D.elapsed_s[i] / cadence) + 1) * cadence : 0;
-  }
-  const pages = Math.ceil(indices.length / 100); tablePage = Math.max(0, Math.min(pages - 1, tablePage));
-  $('table-page').textContent = `${tablePage + 1} / ${pages} · ${indices.length.toLocaleString()} rows`;
-  $('table-prev').disabled = tablePage === 0; $('table-next').disabled = tablePage === pages - 1;
-  const fragment = document.createDocumentFragment();
-  for (const i of indices.slice(tablePage * 100, tablePage * 100 + 100)) {
-    const s = sample(D, D.elapsed_s[i]), tr = document.createElement('tr'); tr.tabIndex = 0;
-    const cells = transfer ? [utcAt(D, s.t).replace('T', ' '), fmt(s.heliocentricRange / unit, 6), fmt(s.speed, 4), fmt(s.earthRange, 3)]
-      : [utcAt(D, s.t).replace('T', ' '), fmt(s.earthRange, 3), fmt(s.speed, 4), angularText(s.ra_deg, true), angularText(s.dec_deg)];
-    for (const value of cells) { const td = document.createElement('td'); td.textContent = value; tr.appendChild(td); }
-    const select = () => { setTime(s.t, true); $('data-dialog').close(); };
-    tr.addEventListener('click', select); tr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); } });
-    fragment.appendChild(tr);
-  }
-  $('data-rows').replaceChildren(fragment);
-}
-
 function download(name, text, type) {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement('a'); a.href = url; a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function showDialog(id) { setPlaying(false); $(id).showModal(); }
-$('show-data').addEventListener('click', () => { buildTable(); showDialog('data-dialog'); });
-$('close-data').addEventListener('click', () => $('data-dialog').close());
-$('show-about').addEventListener('click', () => showDialog('about-dialog'));
-$('close-about').addEventListener('click', () => $('about-dialog').close());
-$('table-step').addEventListener('change', () => { tablePage = 0; buildTable(); });
-$('table-prev').addEventListener('click', () => { tablePage--; buildTable(); });
-$('table-next').addEventListener('click', () => { tablePage++; buildTable(); });
 $('download-csv').addEventListener('click', () => download(transfer ? 'mmx_transfer.csv' : 'mmx_eci.csv', csvText(D), 'text/csv'));
 $('download-json').addEventListener('click', () => download(transfer ? 'mmx_transfer.json' : 'mmx_ephemeris.json', JSON.stringify(D), 'application/json'));
 $('timeline').addEventListener('input', () => setTime(Number($('timeline').value), true));
@@ -469,26 +419,26 @@ $('start').addEventListener('click', () => setTime(0, true)); $('end').addEventL
 $('previous-day').addEventListener('click', () => setTime(state.t - 86400, true)); $('next-day').addEventListener('click', () => setTime(state.t + 86400, true));
 $('views').addEventListener('click', e => { if (allowedViews.includes(e.target.dataset.view)) fitCamera(e.target.dataset.view, true); });
 $('reset-camera').addEventListener('click', () => fitCamera(allowedViews[0]));
-for (const [id, key] of [['show-moon', 'moon'], ['show-moon-orbit', 'moonOrbit'], ['show-planets', 'planets'], ['show-orbits', 'orbits'], ['show-grid', 'grid'], ['show-stars', 'stars'], ['show-constellations', 'constellations'], ['show-labels', 'labels'], ['show-places', 'places'], ['show-osculating', 'osculating']]) {
+for (const [id, key] of [['show-moon', 'moon'], ['show-moon-orbit', 'moonOrbit'], ['show-planets', 'planets'], ['show-orbits', 'orbits'], ['show-grid', 'grid'], ['show-stars', 'stars'], ['show-constellations', 'constellations'], ['show-labels', 'labels'], ['show-places', 'places']]) {
   if ($(id)) $(id).addEventListener('change', () => { state[key] = $(id).checked; if (renderReady) updateScene(); });
 }
-for (const [id, panel, other] of [['toggle-controls', 'controls-panel', 'state-panel'], ['toggle-info', 'state-panel', 'controls-panel']])
-  $(id).addEventListener('click', () => { $(panel).classList.toggle('open'); $(other).classList.remove('open'); });
-$('close-controls').addEventListener('click', () => $('controls-panel').classList.remove('open'));
-$('close-info').addEventListener('click', () => $('state-panel').classList.remove('open'));
-function shareURL() {
-  const url = new URL(location.protocol === 'file:' ? `https://exoplanet5.github.io/MMX/${transfer ? 'transfer.html' : ''}` : location.href);
-  url.search = ''; url.searchParams.set('t', Math.round(state.t)); url.searchParams.set('view', state.view);
-  if (renderReady) url.searchParams.set('cam', [...camera.position.toArray(), ...controls.target.toArray(), ...camera.up.toArray()].map(v => v.toFixed(7)).join(','));
-  if (skyChart?.isOpen() && chartSite) url.searchParams.set('sky', chartSite.id ?? `${chartSite.lat.toFixed(4)},${chartSite.lon.toFixed(4)}`);
-  return url;
+// Wide screens collapse the side columns (the time controls then become a bottom bar); narrow screens open them as overlays.
+const narrow = matchMedia('(max-width: 980px)'), hidden = { left: false, right: false };
+function layoutPanels() {
+  const w = $('controls-panel').parentElement;
+  w.classList.toggle('no-left', hidden.left); w.classList.toggle('no-right', hidden.right);
+  w.classList.toggle('time-bar', narrow.matches || hidden.left);
+  $('toggle-controls').setAttribute('aria-pressed', String(narrow.matches ? $('controls-panel').classList.contains('open') : !hidden.left));
+  $('toggle-info').setAttribute('aria-pressed', String(narrow.matches ? $('state-panel').classList.contains('open') : !hidden.right));
 }
-$('copy-link').addEventListener('click', async () => {
-  const url = shareURL();
-  try { await navigator.clipboard.writeText(url.href); $('copy-link').textContent = 'Copied'; }
-  catch { $('share-message').textContent = url.href; $('share-message').hidden = false; $('controls-panel').classList.add('open'); }
-  setTimeout(() => { $('copy-link').textContent = 'Copy view'; }, 1800);
-});
+for (const [id, panel, other, side] of [['toggle-controls', 'controls-panel', 'state-panel', 'left'], ['toggle-info', 'state-panel', 'controls-panel', 'right']])
+  $(id).addEventListener('click', () => {
+    if (narrow.matches) { $(panel).classList.toggle('open'); $(other).classList.remove('open'); } else hidden[side] = !hidden[side];
+    layoutPanels();
+  });
+for (const [id, panel] of [['close-controls', 'controls-panel'], ['close-info', 'state-panel']])
+  $(id).addEventListener('click', () => { $(panel).classList.remove('open'); layoutPanels(); });
+narrow.addEventListener('change', layoutPanels); layoutPanels();
 addEventListener('keydown', e => {
   if (e.target.closest('input,select,textarea,button,dialog,[role=button],.skw')) return;
   if (e.code === 'Space') { e.preventDefault(); setPlaying(!state.playing); }
@@ -511,8 +461,8 @@ if (skyChart && query.get('sky')) {
 }
 window.__mmx = { state, mode: transfer ? 'transfer' : 'departure', setTime, setPlaying, fitCamera, sample: t => sample(D, t),
   get ready() { return renderReady; }, get camera() { return camera; }, get controls() { return controls; }, get earth() { return earth; },
-  get sky() { return sky; }, get terminator() { return earthTerminator; }, skyChart, shareURL, openSky, places: PLACES,
-  get site() { return { marker: siteMarker, sightLine, earthPixels, chartSite }; }, get osculatingLine() { return osculatingLine; },
+  get sky() { return sky; }, get terminator() { return earthTerminator; }, skyChart, openSky, places: PLACES,
+  get site() { return { marker: siteMarker, sightLine, earthPixels, chartSite }; },
   orbit: () => osculating(current.mmx, mu, transfer), get planets() { return planetNodes; }, get moonOrbit() { return moonPath; }, get orbits() { return orbitNodes; }, meta: M,
   projectedBounds: () => {
     if (!renderReady) return null;

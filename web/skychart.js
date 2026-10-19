@@ -9,9 +9,9 @@ import { PLACES } from './places.js';
 
 const MONO = 'Menlo, "SF Mono", ui-monospace, Consolas, monospace';
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
-const FOVS = ['auto', 5, 10, 20, 40, 80], TICKS = [60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
+const FOVS = [5, 10, 20, 40, 80, 'auto'], TICKS = [60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
 const C = { ink: '#e8eaed', dim: 'rgba(154,164,174,0.9)', halo: 'rgba(5,8,12,0.85)', track: '#3987e5', pass: '#a1d4fc', sun: '#ffd54f',
-  limit: '#199e70', lines: 'rgba(90,123,184,0.6)', grid: 'rgba(130,160,210,0.2)', gridInk: 'rgba(154,164,174,0.75)', ground: 'rgba(4,6,9,0.78)' };
+  lines: 'rgba(90,123,184,0.6)', grid: 'rgba(130,160,210,0.2)', gridInk: 'rgba(154,164,174,0.75)', ground: 'rgba(4,6,9,0.78)' };
 const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
 const dir16 = az => COMPASS[Math.round(az / 22.5) % 16];
 const pad = n => String(n).padStart(2, '0');
@@ -59,7 +59,7 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
   const names = catalog.names.map(([ra, dec, name]) => [O.radecVector(ra, dec), name]);
   const cons = catalog.cons.map(([ra, dec, name]) => [O.radecVector(ra, dec), name.toUpperCase()]);
   const lines = catalog.lines.map(line => line.map(([ra, dec]) => O.radecVector(ra, dec)));
-  const cfg = { mode: 'field', fov: 'auto', follow: false, zenithUp: false, eastLeft: true, grid: true, stars: true, starNames: true, constLines: true, constNames: true, sunMoon: true };
+  const cfg = { mode: 'field', fov: 20, follow: false, zenithUp: false, eastLeft: true, grid: true, stars: true, starNames: true, constLines: true, constNames: true, sunMoon: true };
   let win, canvas, ctx, body, top, hud, sub, foot, title, chips, selectEl, buttons = {};
   let cssW = 0, cssH = 0, dpr = 1, site = null, frame = null, track = null, passes = [], selected = 'auto', chipKey = '', queued = false, lastView = null, boxes = [];
 
@@ -96,7 +96,7 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
     const toggle = key => () => { cfg[key] = !cfg[key]; };
     mk('field', 'Field', 'Partial-sky field: gnomonic RA/Dec chart framed on MMX, with the local horizon', () => { cfg.mode = 'field'; });
     mk('allsky', 'All-sky', 'All-sky alt-az locator: zenith at the centre, horizon at the rim', () => { cfg.mode = 'allsky'; });
-    mk('fov', 'Auto', 'Field of view: Auto fits the selected pass; 5°–80° fixed widths', () => { cfg.fov = FOVS[(FOVS.indexOf(cfg.fov) + 1) % FOVS.length]; });
+    mk('fov', '20°', 'Field of view: 5°–80°, or Auto to fit the selected pass', () => { cfg.fov = FOVS[(FOVS.indexOf(cfg.fov) + 1) % FOVS.length]; });
     mk('follow', '⊙', 'Centre the field on MMX at the selected time', toggle('follow'));
     mk('zenithUp', 'N↑', 'Orientation: celestial north up, or the observer’s zenith up', toggle('zenithUp'));
     mk('grid', '#', 'RA/Dec grid', toggle('grid'));
@@ -119,7 +119,7 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
     canvas.addEventListener('wheel', e => {
       if (cfg.mode !== 'field') return;
       e.preventDefault();
-      const fixed = FOVS.slice(1), now = cfg.fov === 'auto' ? (lastView?.fov ?? 20) : cfg.fov;
+      const fixed = FOVS.filter(Number.isFinite), now = cfg.fov === 'auto' ? (lastView?.fov ?? 20) : cfg.fov;
       cfg.fov = e.deltaY > 0 ? (fixed.find(v => v > now + .5) ?? 80) : ([...fixed].reverse().find(v => v < now - .5) ?? 5);
       refresh(); request();
     }, { passive: false });
@@ -218,10 +218,10 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
     ctx.fillStyle = 'rgba(10,14,18,0.74)'; ctx.fill();
     ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText(text, x + 3, y);
   }
-  // Roman-chart sizes, with a floor so V ≈ 6 stars stay visible on the twilight-tinted sky.
-  function starDot(x, y, star, scale = 1) {
-    const r = Math.max(1, star.diameter * scale / 2);
-    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fillStyle = `rgba(236,240,248,${Math.max(.7, star.opacity)})`; ctx.fill();
+  // Roman-chart sizes. The partial field raises the floor so V ≈ 6 stars stay visible; the all-sky locator keeps them faint.
+  function starDot(x, y, star, scale = 1, minRadius = 1, minOpacity = .7) {
+    const r = Math.max(minRadius, star.diameter * scale / 2);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fillStyle = `rgba(236,240,248,${Math.max(minOpacity, star.opacity)})`; ctx.fill();
     if (star.ringDiameter) { ctx.beginPath(); ctx.arc(x, y, star.ringDiameter * scale / 2, 0, 2 * Math.PI); ctx.strokeStyle = 'rgba(207,216,232,0.7)'; ctx.lineWidth = .8; ctx.stroke(); }
   }
   // Moon phase: sun-side semicircle closed by the terminator ellipse; cosPsi is the cosine of the Sun–Moon elongation.
@@ -268,8 +268,8 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
 
   function drawField(g, area, pi) {
     const v = lastView = fieldView(g, area, pi), pass = pi >= 0 ? passes[pi] : null;
-    const caption = `${v.fov}° field · gnomonic · ${cfg.zenithUp ? 'zenith up' : 'north up'}`, ax = area.x + area.w - 34, ay = area.y + area.h - 34;
-    ctx.font = '10px ' + MONO; claim(area.x + 4, area.y + area.h - 22, ctx.measureText(caption).width + 12, 20); claim(ax - 34, ay - 34, 68, 68);
+    const ax = area.x + area.w - 34, ay = area.y + area.h - 34;
+    claim(ax - 34, ay - 34, 68, 68);
     const now = v.project(g.mmx.direction, true);
     if (v.inside(now)) { ctx.font = '11px ' + MONO; claim(now.x - 9, now.y - 9, ctx.measureText('MMX · below horizon').width + 24, 18); }
     ctx.save(); ctx.beginPath(); ctx.rect(area.x, area.y, area.w, area.h); ctx.clip();
@@ -292,7 +292,7 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
     drawGround(g, v);
     drawTrackField(g, v, pass);
     ctx.restore();
-    // Orientation arrows and field size, outside the clip so they stay legible.
+    // Orientation arrows, outside the clip so they stay legible.
     const o = v.screen(0, 0), n = v.screen(0, .02), e = v.screen(.02, 0);
     ctx.font = '10px ' + MONO;
     for (const [p, label] of [[n, 'N'], [e, 'E']]) {
@@ -300,7 +300,6 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + ux * 20, ay + uy * 20); ctx.strokeStyle = C.dim; ctx.lineWidth = 1.2; ctx.stroke();
       haloText(label, ax + ux * 27, ay + uy * 27, label === 'N' ? C.ink : C.dim, 'center');
     }
-    timeBox(caption, area.x + 8, area.y + area.h - 9);
   }
 
   function drawRaDecGrid(v) {
@@ -361,17 +360,7 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
     }
     if (polygon.length > 2) { ctx.beginPath(); polygon.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.closePath(); ctx.fillStyle = C.ground; ctx.fill(); }
     if (edge.length === 2) { ctx.beginPath(); ctx.moveTo(...edge[0]); ctx.lineTo(...edge[1]); ctx.strokeStyle = 'rgba(232,234,237,0.55)'; ctx.lineWidth = 1.2; ctx.stroke(); }
-    // 15° minimum-elevation line: a small circle about the zenith.
-    ctx.beginPath(); let prev = null, labelAt = null;
-    for (let az = 0; az <= 360; az += 1) {
-      const p = v.project(O.fromHorizontal(g.now, az, O.VIEW_ELEVATION_DEG), true);
-      if (!p) { prev = null; continue; }
-      if (prev && Math.hypot(p.x - prev.x, p.y - prev.y) < v.area.w) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y);
-      prev = p; if (!labelAt && v.inside(p) && p.x > x + 40 && p.x < x + w - 60) labelAt = p;
-    }
-    ctx.setLineDash([5, 4]); ctx.strokeStyle = hexA(C.limit, .9); ctx.lineWidth = 1.2; ctx.stroke(); ctx.setLineDash([]);
     ctx.font = '10px ' + MONO;
-    if (labelAt) label('15°', labelAt.x + 4, labelAt.y - 8, '#4fd1a5');
     for (let az = 0; az < 360; az += 45) {
       const p = v.project(O.fromHorizontal(g.now, az, 0));
       if (!v.inside(p)) continue;
@@ -455,7 +444,6 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
     ctx.beginPath(); ctx.arc(m.cx, m.cy, m.R, 0, 2 * Math.PI); ctx.fillStyle = skyBg(g.sun.el); ctx.fill();
     ctx.lineWidth = 1;
     for (let el = 0; el < 90; el += 30) { ctx.beginPath(); ctx.arc(m.cx, m.cy, (90 - el) / 90 * m.R, 0, 2 * Math.PI); ctx.strokeStyle = el ? 'rgba(232,234,237,0.16)' : 'rgba(232,234,237,0.5)'; ctx.stroke(); }
-    ctx.beginPath(); ctx.arc(m.cx, m.cy, 75 / 90 * m.R, 0, 2 * Math.PI); ctx.setLineDash([5, 4]); ctx.strokeStyle = hexA(C.limit, .8); ctx.stroke(); ctx.setLineDash([]);
     ctx.font = '11px ' + MONO;
     for (let i = 0; i < 8; i++) {
       const pe = project(i * 45, 0), pl = project(i * 45, -14);
@@ -463,13 +451,13 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
       ctx.fillStyle = i ? C.dim : C.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(COMPASS[i * 2], pl.x, pl.y);
     }
     ctx.font = '10px ' + MONO; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(154,164,174,0.75)';
-    for (const el of [0, 15, 30, 60]) { const p = project(22.5, el); ctx.fillText(el + '°', p.x + 2, p.y); }
+    for (const el of [0, 30, 60]) { const p = project(22.5, el); ctx.fillText(el + '°', p.x + 2, p.y); }
     if (cfg.constLines) {
       ctx.strokeStyle = C.lines; ctx.beginPath();
       for (const line of lines) for (let i = 1; i < line.length; i++) { const a = projectU(line[i - 1]), b = projectU(line[i]); if (a && b) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); } }
       ctx.stroke();
     }
-    if (cfg.stars) for (const star of stars) { const p = projectU(star.u); if (p) starDot(p.x, p.y, star, .8); }
+    if (cfg.stars) for (const star of stars) { const p = projectU(star.u); if (p) starDot(p.x, p.y, star, .8, .4, 0); }
     ctx.font = '9px ' + MONO;
     // Track labels outrank star names in the crowded all-sky view.
     const pass = pi >= 0 ? passes[pi] : null, t = getTime();
@@ -482,7 +470,7 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
     }
     ctx.font = '9px ' + MONO;
     if (cfg.starNames) for (const [u, name] of names) { const p = projectU(u); if (p) label(name, p.x + 5, p.y - 4, 'rgba(185,205,240,0.9)'); }
-    if (cfg.constNames) { ctx.font = '10px ' + MONO; for (const [u, name] of cons) { const p = projectU(u); if (p) label(name, p.x, p.y, 'rgba(140,165,215,0.75)', 'center'); } }
+    if (cfg.constNames) { ctx.font = '10px ' + MONO; for (const [u, name] of cons) { const p = projectU(u); if (p) label(name, p.x, p.y, 'rgba(140,165,215,0.5)', 'center'); } }
     if (cfg.sunMoon) {
       if (g.sun.el > 0) { const p = project(g.sun.az, g.sun.el); sunDisc(p.x, p.y, 5); }
       if (g.moon.el > 0) {
@@ -490,17 +478,6 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
         moonDisc(p.x, p.y, 5.5, Math.atan2(ps.y - p.y, ps.x - p.x), dot(g.moon.direction, g.sun.direction));
       }
     }
-    // Outline of the field view, so both charts share one orientation.
-    const v = fieldView(g, { x: 0, y: 0, w: Math.max(200, cssW), h: Math.max(200, cssH - top.offsetHeight - 10) }, pi), w2 = v.area.w / 2 / v.f, h2 = v.area.h / 2 / v.f;
-    ctx.beginPath(); let started = false;
-    for (let i = 0; i <= 80; i++) {
-      const s = i / 20, side = Math.floor(s) % 4, f = s - Math.floor(s);
-      const [a, b] = [[-w2 + 2 * w2 * f, h2], [w2, h2 - 2 * h2 * f], [w2 - 2 * w2 * f, -h2], [-w2, -h2 + 2 * h2 * f]][side];
-      const u = O.fromGnomonic(v.tf, a * Math.cos(v.theta) + b * Math.sin(v.theta), -a * Math.sin(v.theta) + b * Math.cos(v.theta)), p = projectU(u);
-      if (!p) { started = false; continue; }
-      if (started) ctx.lineTo(p.x, p.y); else { ctx.moveTo(p.x, p.y); started = true; }
-    }
-    ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(161,212,252,0.55)'; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
     if (pass) {
       ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 1.8;
       for (let i = pass.first + 1; i <= pass.last; i++) {
@@ -512,7 +489,6 @@ export function createSkyChart({ data, catalog, getTime, onJump = () => {}, onSi
       drawTicks(pass, (az, el) => project(az, el), p => !!p, 16);
     }
     if (g.mmx.el > 0) { const p = project(g.mmx.az, g.mmx.el); mmxMarker(p.x, p.y, true, 'MMX'); }
-    ctx.font = '10px ' + MONO; timeBox(`all-sky · zenith centre · ${cfg.eastLeft ? 'east left' : 'east right'}`, area.x + 8, area.y + area.h - 9);
   }
 
   // ------------------------------------------------------------ chips, HUD and frame

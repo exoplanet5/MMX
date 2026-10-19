@@ -60,13 +60,36 @@ try {
   assert.ok(initialTerminator.horizonError < 1e-7);
   assert.ok(initialTerminator.depthTest && initialTerminator.independent);
   assert.equal(initialTerminator.color, 'b09025');
-  await page.click('#show-about');
-  const about = await page.locator('#about-dialog').innerText();
+  // About lives at the foot of the right panel; Data, Copy view, About buttons, dialogs and the footer bar are gone.
+  assert.equal(await page.locator('#show-data, #copy-link, #show-about, dialog, footer, #show-osculating, .legend-line.osculating').count(), 0);
+  assert.ok((await page.locator('.topbar').boundingBox()).height <= 48, 'slim title bar');
+  assert.ok(await page.locator('#scene .scene-credit').isVisible());
+  assert.match(await page.locator('#scene .scene-credit').textContent(), /Illustration: Mickey/);
+  await page.locator('#about-panel summary').click();
+  const about = await page.locator('#about-panel').innerText();
   assert.match(about, /1 hour and 15°/);
-  assert.ok(!/initially|hidden|removed|changelog|Sampling and provenance/i.test(about));
-  await shot('earth-about'); await page.click('#close-about');
+  assert.ok(!/initially|hidden|removed|changelog|Sampling and provenance|dashed/i.test(about));
+  await shot('earth-about');
+  const downloadEvent = page.waitForEvent('download'); await page.click('#download-csv');
+  await (await downloadEvent).saveAs(path.join(out, 'earth-download.csv'));
+  assert.equal((await readFile(path.join(out, 'earth-download.csv'), 'utf8')).trim().split(/\r?\n/).length, 8642);
+  await page.locator('#about-panel summary').click();
+  assert.ok(!(await page.locator('#controls-panel').innerText()).includes('Click an Asian city'), 'no note under the sky-chart button');
   await shot('earth-default');
   assert.deepEqual(await page.locator('#state-panel h2').allTextContents(), ['Epoch · UTC', 'Geocentric state · ICRF', 'Osculating orbit · Earth']);
+  // Desktop panel toggles: hiding the left column turns the time controls into a bottom bar.
+  for (const [id, side] of [['#toggle-controls', 'left'], ['#toggle-info', 'right']]) {
+    assert.equal(await page.locator(id).getAttribute('aria-pressed'), 'true');
+    await page.click(id); await settle();
+    assert.equal(await page.locator(`.side.${side}`).isVisible(), false, `${side} panel hides on desktop`);
+    assert.equal(await page.locator(id).getAttribute('aria-pressed'), 'false');
+  }
+  const bar = await page.locator('.time-panel').boundingBox(), wide = await page.locator('#scene').boundingBox();
+  assert.ok(bar.width > 1400 && bar.y > wide.y + wide.height - 2 && await page.locator('#timeline').isVisible(), 'time bar spans the bottom');
+  assert.ok(wide.width > 1400, 'scene uses the full width');
+  await page.click('#toggle-controls'); await page.click('#toggle-info'); await settle();
+  assert.ok(await page.locator('.side.left').isVisible() && await page.locator('.side.right').isVisible());
+  assert.ok((await page.locator('.time-panel').boundingBox()).width <= 245);
   // Time controls live in the left column; the timeline list, Jump-to-UTC form and bottom bar are gone.
   assert.equal(await page.locator('#events, #utc-input, #go-utc, section.timeline').count(), 0);
   const slider = await page.locator('#timeline').boundingBox(), panel = await page.locator('.time-panel').boundingBox();
@@ -74,19 +97,9 @@ try {
   assert.match(await page.locator('#utc-clock').textContent(), /2026-10-19 21:00:00/);
   const [raBox, decBox] = [await page.locator('#ra-value').boundingBox(), await page.locator('#dec-value').boundingBox()];
   assert.ok(Math.abs(raBox.y - decBox.y) < 2 && decBox.x > raBox.x, 'RA and Dec share one line');
-  const orbitCheck = await page.evaluate(() => {
-    const app = window.__mmx, line = app.osculatingLine, orbit = app.orbit(), unit = app.meta.earth_radius_km, s = app.sample(app.state.t);
-    const start = line.geometry.attributes.instanceStart, mmx = line.position.clone().set(s.mmx[0] / unit, s.mmx[2] / unit, -s.mmx[1] / unit);
-    let nearest = Infinity;
-    for (let i = 0; i < start.count; i++) nearest = Math.min(nearest, line.position.clone().fromBufferAttribute(start, i).distanceTo(mmx));
-    return { visible: line.visible, dashed: line.material.dashed, e: orbit.e, c3: orbit.c3, nearest, text: document.getElementById('orbit-e').textContent };
-  });
-  assert.ok(orbitCheck.visible && orbitCheck.dashed && orbitCheck.e > 1 && Math.abs(orbitCheck.c3 - 9.959) < .001);
-  assert.ok(orbitCheck.nearest < .5, `osculating conic passes MMX (${orbitCheck.nearest} Earth radii between samples)`);
-  assert.equal(orbitCheck.text, orbitCheck.e.toFixed(5));
-  await page.uncheck('#show-osculating'); await settle();
-  assert.equal(await page.evaluate(() => window.__mmx.osculatingLine.visible), false);
-  await page.check('#show-osculating');
+  const orbitCheck = await page.evaluate(() => ({ orbit: window.__mmx.orbit(), text: document.getElementById('orbit-e').textContent }));
+  assert.ok(orbitCheck.orbit.e > 1 && Math.abs(orbitCheck.orbit.c3 - 9.959) < .001);
+  assert.equal(orbitCheck.text, orbitCheck.orbit.e.toFixed(5));
   assert.equal(await page.locator('[data-view="xy"], [data-view="xz"], [data-view="yz"], #show-axes, #charts').count(), 0);
   assert.ok(!(await page.locator('body').innerText()).includes('Scientific figures'));
   assert.ok(!(await page.locator('body').innerText()).includes('flyby'));
@@ -133,12 +146,7 @@ try {
   await shot('earth-desktop');
   await page.click('[data-view="departure"]'); await settle(); await shot('earth-detail');
   assert.equal(await page.evaluate(() => window.__mmx.state.t), 0);
-  await page.click('#show-data'); assert.equal(await page.locator('#data-rows tr').count(), 7);
-  await page.selectOption('#table-step', 'all'); assert.equal(await page.locator('#data-rows tr').count(), 100);
-  const downloadEvent = page.waitForEvent('download'); await page.click('#download-csv');
-  await (await downloadEvent).saveAs(path.join(out, 'earth-download.csv'));
-  assert.equal((await readFile(path.join(out, 'earth-download.csv'), 'utf8')).trim().split(/\r?\n/).length, 8642);
-  await page.click('#close-data'); await page.click('#reset-camera');
+  await page.click('#reset-camera');
   const nearDistance = norm(await page.evaluate(() => window.__mmx.camera.position.toArray()));
   await page.click('[data-view="full"]');
   assert.ok(norm(await page.evaluate(() => window.__mmx.camera.position.toArray())) > nearDistance * 10);
@@ -153,7 +161,8 @@ try {
   await shot('earth-asia');
   await page.locator('.place-label', { hasText: /^Tokyo$/ }).click(); await settle(); await settle();
   let chart = await page.evaluate(() => window.__mmx.skyChart.state());
-  assert.ok(chart.open && chart.site.id === 'tokyo' && chart.mode === 'field' && chart.fov >= 20 && chart.fov <= 80);
+  assert.ok(chart.open && chart.site.id === 'tokyo' && chart.mode === 'field' && chart.fov === 20);
+  assert.equal(await page.locator('.skc-tbtn.skc-on', { hasText: 'Field' }).count(), 1);
   assert.equal(chart.passes.length, 7);
   assert.equal(await page.locator('.skc-chip').count(), 8);
   assert.match(await page.locator('.skw-title .sub').textContent(), /Tokyo/);
@@ -176,8 +185,8 @@ try {
   assert.equal(await page.evaluate(() => window.__mmx.skyChart.state().mode), 'allsky');
   assert.ok(await painted() > 500); await shot('sky-allsky');
   await page.locator('.skc-tbtn', { hasText: 'Field' }).click();
-  await page.locator('.skc-tbtn', { hasText: 'Auto' }).click(); await settle();
-  assert.equal(await page.evaluate(() => window.__mmx.skyChart.state().fov), 5);
+  await page.locator('.skc-tbtn', { hasText: '20°' }).click(); await settle();
+  assert.equal(await page.evaluate(() => window.__mmx.skyChart.state().fov), 40);
   await page.keyboard.press('Escape'); await settle();
   assert.equal(await page.evaluate(() => window.__mmx.skyChart.state().open), false);
   assert.equal(await page.evaluate(() => window.__mmx.site.marker.visible), false);
@@ -189,10 +198,8 @@ try {
   chart = await page.evaluate(() => window.__mmx.skyChart.state());
   assert.ok(chart.open && chart.site.custom && Math.abs(chart.site.lat - 30) < 1 && Math.abs(chart.site.lon - 108) < 1, `globe click site ${chart.site.lat}, ${chart.site.lon}`);
   assert.equal(norm(await target()), 0, 'a globe click must not move the Earth pivot');
-  assert.equal(new URL(await page.evaluate(() => window.__mmx.shareURL().href)).searchParams.get('sky'), `${chart.site.lat.toFixed(4)},${chart.site.lon.toFixed(4)}`);
   await page.selectOption('.skc-site', 'misasa'); await settle();
   assert.equal(await page.evaluate(() => window.__mmx.skyChart.state().site.heightKm), 1.58);
-  assert.equal(new URL(await page.evaluate(() => window.__mmx.shareURL().href)).searchParams.get('sky'), 'misasa');
   await page.click('.skw-close'); await page.click('#reset-camera');
   await page.setViewportSize({ width: 390, height: 844 }); await settle();
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -209,8 +216,8 @@ try {
   assert.equal(norm(await target()), 0);
   assert.deepEqual(await page.locator('#state-panel h2').allTextContents(), ['Epoch · UTC', 'Heliocentric state · ICRF', 'Osculating orbit · Sun']);
   assert.equal(await page.locator('#events, #utc-input, #open-sky, #show-places').count(), 0);
-  const helio = await page.evaluate(() => ({ orbit: window.__mmx.orbit(), visible: window.__mmx.osculatingLine.visible }));
-  assert.ok(helio.visible && helio.orbit.e < 1 && helio.orbit.inclination < 3);
+  const helio = await page.evaluate(() => window.__mmx.orbit());
+  assert.ok(helio.e < 1 && helio.inclination < 3);
   assert.equal(await page.evaluate(() => window.__mmx.meta.end_utc), '2027-08-29T04:57:00Z');
   assert.equal(await page.evaluate(() => window.__mmx.state.view), 'inner');
   assert.equal(await page.evaluate(() => window.__mmx.sky.stars.geometry.attributes.position.count), 9827);
@@ -245,13 +252,14 @@ try {
   await page.click('#start'); await page.click('#play');
   await page.waitForFunction(() => window.__mmx.state.t > 0); await page.click('#play');
   assert.equal(await page.evaluate(() => window.__mmx.state.playing), false);
-  await page.click('#show-data'); await page.selectOption('#table-step', 'all');
-  assert.equal(await page.locator('#data-rows tr').count(), 100); await page.click('#close-data');
+  await page.locator('#about-panel summary').click();
+  const transferDownload = page.waitForEvent('download'); await page.click('#download-csv');
+  assert.equal((await transferDownload).suggestedFilename(), 'mmx_transfer.csv');
   await page.click('.page-switch a[href="./index.html"]'); await ready();
   assert.equal(await page.evaluate(() => window.__mmx.mode), 'departure');
   assert.deepEqual(requests, [], 'Both standalone viewers must load without network requests');
   assert.deepEqual(errors, [], 'No JavaScript or shader errors');
-  console.log('PASS: offline linked pages, left-column time controls, osculating orbits, Earth-locked drag, Asian city and globe-click sky charts, solar free-pan pivot, layers, RA/Dec, transfer endpoints, playback, data export and desktop/mobile views.');
+  console.log('PASS: offline linked pages, left-column time controls, desktop panel toggles, right-panel About, osculating elements, Earth-locked drag, Asian city and globe-click sky charts, solar free-pan pivot, layers, RA/Dec, transfer endpoints, playback, data export and desktop/mobile views.');
 
   server = createServer(async (req, res) => {
     try {
