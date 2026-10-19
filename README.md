@@ -6,6 +6,15 @@ Two linked, standalone scientific viewers for JAXA's Martian Moons eXploration s
 
 > **Pre-launch planning ephemeris, not flight reconstruction.** The source is JAXA `20261019_20281231_MMX_V0.2` via JPL Horizons. No flight-prediction covariance or uncertainty envelope was supplied.
 
+## Mission infographic
+
+[**MMX: Earth to Phobos and back**](docs/infographics/index.html) combines the retrieved outbound transfer with clearly marked concepts for Mars capture, Phobos quasi-satellite operations and Earth return. It includes an original probe illustration and separate **C-SMP coring** and **P-SMP nitrogen-jet sampling** cutaways.
+
+- [PNG, 2880 × 1782 at 180 dpi](docs/infographics/mmx-mission-profile.png) · [SVG](docs/infographics/mmx-mission-profile.svg) · [PDF, 16 × 9.9 inches](docs/infographics/mmx-mission-profile.pdf)
+- [Sources and fact notes](docs/infographics/sources.json) · [Figure provenance](docs/infographics/provenance.json)
+- Build: `~/.venvs/astro313/bin/python -I scripts/build_infographic.py && node scripts/render_infographic.mjs`.
+- The 2030–2031 return and insertion drawings are **schematic**, not spacecraft ephemerides. The blue outbound line uses all 8,503 stored planning states and stops before the arrival-model splice.
+
 ## Earth departure
 
 **2026-10-19 21:00:00 → 2026-10-25 21:00:00 UTC**

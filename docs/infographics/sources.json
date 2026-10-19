@@ -1,0 +1,24 @@
+{
+  "checked_date": "2026-10-17",
+  "sources": [
+    {"id":"launch", "title":"JAXA scheduled launch announcement, 20 August 2026", "url":"https://global.jaxa.jp/press/2026/08/20260820-1_e.html", "supports":"H3 F10; 20 October 2026 04:41:03 JST = 19 October 19:41:03 UTC; Tanegashima; scheduled, not actual."},
+    {"id":"mission", "title":"JAXA MMX mission overview", "url":"https://www.mmx.jaxa.jp/en/", "supports":"2026 launch, 2027–2030 Martian operations, 2031 Earth return."},
+    {"id":"presskit", "title":"JAXA MMX press kit, 20 August 2026", "url":"https://fanfun.jaxa.jp/countdown/mmx_h3f10/files/mmx_press-kit_en_20260820.pdf", "supports":"Mission profile (pp.20–22), three-module architecture (p.24), instruments and sampling."},
+    {"id":"science", "title":"JAXA MMX science and sampling", "url":"https://www.mmx.jaxa.jp/en/science/", "supports":"C-SMP hollow corer and robotic arm, approximately 2 cm shallow subsurface material; P-SMP pressurized-gas surface collection; sample return capsule; at least 10 g mission target."},
+    {"id":"pneumatic", "title":"ISAS P-SMP flight model completion, 21 February 2025", "url":"https://mmx-news.isas.jaxa.jp/?p=2570", "supports":"High-pressure nitrogen; surface vs subsurface complementarity; landing-leg mounting; manipulator retrieval of canister."},
+    {"id":"esa", "title":"ESA launch and mission update, 13 October 2026", "url":"https://www.esa.int/Science_Exploration/Space_Science/Mars_moon_lander_set_to_launch_on_19_October", "supports":"August 2027 arrival, Phobos proximity operations from September, sampling in 2030, return in 2031. No precise insertion day/time claimed."},
+    {"id":"phobos", "title":"NASA Phobos facts", "url":"https://science.nasa.gov/mars/moons/phobos/", "supports":"Approximate 27 × 22 × 18 km dimensions; irregular cratered body."},
+    {"id":"elements", "title":"JPL planetary satellite mean elements", "url":"https://ssd.jpl.nasa.gov/sats/elem/", "supports":"Phobos semimajor axis about 9,375 km from Mars center; displayed rounded to ~9,400 km, not altitude."},
+    {"id":"corer", "title":"ISAS News 537, December 2025, p.6", "url":"https://www.isas.jaxa.jp/outreach/isas_news/files/ISASnews537.pdf", "supports":"Driven double-tube corer and sample retention; sampling at two different locations on Phobos."},
+    {"id":"ephemeris", "title":"JPL Horizons spacecraft −239 / archived local planning states", "url":"https://ssd.jpl.nasa.gov/horizons/", "supports":"JAXA 20261019_20281231_MMX_V0.2 planning solution; outbound geometry through 2027-08-29 04:57 UTC. The following planning-arc discontinuity is not a resolved capture burn."}
+  ],
+  "scope_notes": [
+    "All dates are planned; no flight reconstruction or official-service claim.",
+    "19 October UTC and 20 October JST are the same scheduled launch event.",
+    "Return is stated at year precision; no July 2031 claim.",
+    "At least 10 g is the total mission return target, not a promise from each sampler.",
+    "Two techniques are not assigned one-to-one to two fixed sites.",
+    "QSO sketch is relative motion near Phobos; both bodies orbit Mars.",
+    "No original JAXA/ESA image pixels or agency logos are incorporated."
+  ]
+}

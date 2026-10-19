@@ -1,0 +1,33 @@
+{
+  "title": "MMX Mission Profile",
+  "dimensions_px": [
+    2880,
+    1782
+  ],
+  "size_inches": [
+    16,
+    9.9
+  ],
+  "dpi": 180,
+  "status": "Independent pre-launch planning infographic; not an official JAXA publication.",
+  "outbound_source": "../data/transfer.json",
+  "outbound_source_sha256": "5c2272ff053207f49546dfebfced404263e0fe89088ea7ff2e14ee20315ad634",
+  "start_utc": "2026-10-19T21:00:00Z",
+  "end_utc": "2027-08-29T04:57:00Z",
+  "duration_days": 313.33125,
+  "coordinate_transform": {
+    "source": "Geometric Sun-centered ICRF equatorial",
+    "display": "J2000 mean ecliptic XY, rotated -45 degrees in plane and vertically foreshortened by 0.53",
+    "obliquity_degrees": 23.4392911,
+    "scale_px_per_au": 220
+  },
+  "illustrative_elements": [
+    "Mars insertion sequence",
+    "quasi-satellite orbit",
+    "return concept",
+    "enlarged bodies",
+    "probe assembly",
+    "sampler cross-sections"
+  ],
+  "boundary_note": "The outbound path ends at 2027-08-29 04:57 UTC before the source planning-arc discontinuity; no resolved insertion burn or return ephemeris is claimed."
+}
